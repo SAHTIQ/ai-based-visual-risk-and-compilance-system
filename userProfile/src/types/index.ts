@@ -253,3 +253,36 @@ export interface MetricForecast {
   regression_series: { label: string; value: number }[];
   forecast_series: { label: string; value: number }[];
 }
+
+export interface SimulationDay {
+  date: string;
+  work_hours: number;
+  focus_hours: number;
+  distraction_hours: number;
+  focus_ratio: number;
+  productivity_score: number;
+}
+
+export interface SimulationScenario {
+  name: string;
+  daily_values: SimulationDay[];
+  summary: {
+    outcome: string;
+    projected_average_productivity: number | null;
+    projected_total_work_hours: number | null;
+    change_from_current: number | null;
+  };
+  supporting_factors: string[];
+  evidence: string[];
+  rules: string[];
+  confidence: number | null;
+  recommendation: string;
+}
+
+export interface SimulationResponse {
+  simulation_period: number;
+  evidence_status: 'valid' | 'insufficient_evidence';
+  historical_observations: number;
+  scenarios: Record<'best' | 'expected' | 'risk', SimulationScenario>;
+  note: string;
+}

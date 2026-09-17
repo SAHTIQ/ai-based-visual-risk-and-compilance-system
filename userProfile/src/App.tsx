@@ -13,6 +13,7 @@ import { Study } from './pages/Study';
 import { Habits } from './pages/Habits';
 import { ActivityHistory } from './pages/ActivityHistory';
 import { Settings } from './pages/Settings';
+import { Simulation } from './pages/Simulation';
 
 export function App() {
   return (
@@ -27,6 +28,7 @@ export function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="productivity" element={<Productivity />} />
                 <Route path="forecasting" element={<Forecasting />} />
+                <Route path="simulation" element={<Simulation />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="financial" element={<Financial />} />
                 <Route path="study" element={<Study />} />

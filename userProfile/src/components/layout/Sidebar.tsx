@@ -13,6 +13,7 @@ import {
   X,
   Zap,
   TrendingUp,
+  Orbit,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -28,6 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/productivity', label: 'Productivity & Behavior', icon: Zap },
     { to: '/forecasting', label: 'Predictive Forecasting', icon: TrendingUp },
+    { to: '/simulation', label: 'Future Simulation', icon: Orbit },
   ];
 
   const dataItems = [

@@ -14,6 +14,7 @@ from app.routers import (
     behavior_router,
     analytics_router,
     forecast_router,
+    simulation_router,
 )
 from app.models.user import User
 from app.models.profile import UserProfile
@@ -55,6 +56,7 @@ app.include_router(settings_router)
 app.include_router(behavior_router)
 app.include_router(analytics_router)
 app.include_router(forecast_router)
+app.include_router(simulation_router)
 
 @app.get("/", tags=["Health"])
 def root_health_check():

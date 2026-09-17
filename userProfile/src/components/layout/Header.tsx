@@ -12,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/productivity': 'Productivity & Behavior',
   '/forecasting': 'Predictive Forecasting',
+  '/simulation': 'Future Simulation',
   '/profile': 'Profile',
   '/financial': 'Financial',
   '/study': 'Study',

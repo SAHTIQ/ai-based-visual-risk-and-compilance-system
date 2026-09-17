@@ -9,6 +9,7 @@ import type {
   WorkSession,
   ProductivityAnalytics,
   MetricForecast,
+  SimulationResponse,
   WorkActivityType,
   HabitCategory,
 } from '../types';
@@ -496,6 +497,10 @@ export const api = {
 
   async getHabitForecast(period: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<MetricForecast> {
     return fetchApi<MetricForecast>(`/forecast/habits?period=${period}`);
+  },
+
+  async getFutureSimulation(): Promise<SimulationResponse> {
+    return fetchApi<SimulationResponse>('/simulation/future');
   },
 
 
