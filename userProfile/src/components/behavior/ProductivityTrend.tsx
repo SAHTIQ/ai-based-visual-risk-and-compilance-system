@@ -11,7 +11,7 @@ const periods: { key: Period; label: string }[] = [
   { key: 'monthly', label: 'Monthly' },
 ];
 
-const formatHours = (v: number) => `${v.toFixed(1)} hrs`;
+const formatScore = (v: number) => `${v.toFixed(1)}/100`;
 
 function TrendChart({ forecast, period }: { forecast: MetricForecast; period: Period }) {
   const raw = forecast.historical_series;
@@ -40,21 +40,21 @@ function TrendChart({ forecast, period }: { forecast: MetricForecast; period: Pe
         {tickValues.map((v, i) => (
           <g key={i}>
             <line x1={pad.left} x2={width-pad.right} y1={y(v)} y2={y(v)} stroke="var(--chart-grid)" />
-            <text x={pad.left-8} y={y(v)+4} textAnchor="end" fontSize="11" fill="var(--chart-axis)">{Math.round(v)}h</text>
+            <text x={pad.left-8} y={y(v)+4} textAnchor="end" fontSize="11" fill="var(--chart-axis)">{Math.round(v)}/100</text>
           </g>
         ))}
         <path d={area} fill="var(--chart-fill)" stroke="none"/>
         <path d={line} fill="none" stroke="var(--chart-actual)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
         {points.map((p,i) => (
           <circle key={i} cx={x(i)} cy={y(p.value)} r="3.5" fill="var(--color-surface)" stroke="var(--chart-actual)" strokeWidth="2">
-            <title>{`${p.label}: ${formatHours(p.value)}`}</title>
+            <title>{`${p.label}: ${formatScore(p.value)}`}</title>
           </circle>
         ))}
         {forecast.predicted_value !== null && forecast.predicted_value !== undefined && (
           <g>
             <path d={`M ${x(points.length-1)} ${y(points[points.length-1].value)} L ${width-pad.right} ${y(forecast.predicted_value)}`} fill="none" stroke="var(--chart-forecast)" strokeWidth="2" strokeDasharray="4 5" strokeLinecap="round"/>
             <circle cx={width-pad.right} cy={y(forecast.predicted_value)} r="4" fill="var(--chart-forecast)">
-              <title>{`Next period: ${formatHours(forecast.predicted_value)}`}</title>
+              <title>{`Next period: ${formatScore(forecast.predicted_value)}`}</title>
             </circle>
           </g>
         )}
@@ -113,11 +113,11 @@ export const ProductivityTrend: React.FC = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
               <p className="text-xs text-text-secondary">Current</p>
-              <p className="text-lg font-semibold text-text-primary tabular-nums">{formatHours(current)}</p>
+              <p className="text-lg font-semibold text-text-primary tabular-nums">{formatScore(current)}</p>
             </div>
             <div>
               <p className="text-xs text-text-secondary">Next period</p>
-              <p className="text-lg font-semibold text-text-primary tabular-nums">{forecast.predicted_value == null ? '—' : formatHours(forecast.predicted_value)}</p>
+              <p className="text-lg font-semibold text-text-primary tabular-nums">{forecast.predicted_value == null ? '—' : formatScore(forecast.predicted_value)}</p>
             </div>
             <div>
               <p className="text-xs text-text-secondary">Trend</p>

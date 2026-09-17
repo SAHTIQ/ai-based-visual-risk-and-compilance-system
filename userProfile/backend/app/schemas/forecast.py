@@ -4,19 +4,33 @@ from typing import List, Optional, Literal
 from pydantic import Field
 
 class ForecastEvaluation(BaseModel):
-    mae: float
-    rmse: float
+    mae: Optional[float] = None
+    rmse: Optional[float] = None
     r2: Optional[float] = None
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    f1: Optional[float] = None
 
 class ModelEvaluation(BaseModel):
     model: str
-    train_mae: float
-    test_mae: float
-    train_rmse: float
-    test_rmse: float
+    train_mae: Optional[float] = None
+    test_mae: Optional[float] = None
+    train_rmse: Optional[float] = None
+    test_rmse: Optional[float] = None
     train_r2: Optional[float] = None
     test_r2: Optional[float] = None
     explained_variance: Optional[float] = None
+    train_accuracy: Optional[float] = None
+    test_accuracy: Optional[float] = None
+    train_precision: Optional[float] = None
+    test_precision: Optional[float] = None
+    train_recall: Optional[float] = None
+    test_recall: Optional[float] = None
+    train_f1: Optional[float] = None
+    test_f1: Optional[float] = None
+    train_observations: int
+    test_observations: int
 
 class SeriesPoint(BaseModel):
     label: str

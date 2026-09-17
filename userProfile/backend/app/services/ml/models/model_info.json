@@ -12,8 +12,14 @@
     "target": "productivity_score",
     "training_rows": 672,
     "test_rows": 168,
-    "mae": 7.486,
-    "r2": 0.286
+    "train_mae": 8.227,
+    "train_rmse": 10.866,
+    "train_r2": 0.278,
+    "train_explained_variance": 0.278,
+    "test_mae": 8.839,
+    "test_rmse": 11.241,
+    "test_r2": 0.146,
+    "test_explained_variance": 0.146
   },
   "financial": {
     "name": "Financial Model",
@@ -27,8 +33,14 @@
     "target": "weekly_expenses",
     "training_rows": 672,
     "test_rows": 168,
-    "mae": 189.352,
-    "r2": 0.857
+    "train_mae": 189.698,
+    "train_rmse": 243.22,
+    "train_r2": 0.855,
+    "train_explained_variance": 0.855,
+    "test_mae": 195.798,
+    "test_rmse": 255.998,
+    "test_r2": 0.819,
+    "test_explained_variance": 0.822
   },
   "habit": {
     "name": "Habit Consistency Model",
@@ -40,6 +52,13 @@
     "target": "good_habit_day",
     "training_rows": 672,
     "test_rows": 168,
-    "accuracy": 0.732
+    "train_accuracy": 0.749,
+    "test_accuracy": 0.726,
+    "train_precision": 0.749,
+    "test_precision": 0.721,
+    "train_recall": 0.998,
+    "test_recall": 1.0,
+    "train_f1": 0.855,
+    "test_f1": 0.838
   }
 }

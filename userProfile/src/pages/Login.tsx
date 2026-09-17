@@ -1,4 +1,5 @@
-import React, { FormEvent, useState } from 'react';
+import React, { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

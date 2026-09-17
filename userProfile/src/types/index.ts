@@ -202,20 +202,34 @@ export interface ProductivityAnalytics {
 }
 
 export interface ForecastEvaluation {
-  mae: number;
-  rmse: number;
+  mae: number | null;
+  rmse: number | null;
   r2: number | null; // null when statistically undefined (zero-variance evaluation window)
+  accuracy?: number | null;
+  precision?: number | null;
+  recall?: number | null;
+  f1?: number | null;
 }
 
 export interface ModelEvaluation {
   model: string;
-  train_mae: number;
-  test_mae: number;
-  train_rmse: number;
-  test_rmse: number;
+  train_mae: number | null;
+  test_mae: number | null;
+  train_rmse: number | null;
+  test_rmse: number | null;
   train_r2: number | null;
   test_r2: number | null;
   explained_variance: number | null;
+  train_accuracy: number | null;
+  test_accuracy: number | null;
+  train_precision: number | null;
+  test_precision: number | null;
+  train_recall: number | null;
+  test_recall: number | null;
+  train_f1: number | null;
+  test_f1: number | null;
+  train_observations: number;
+  test_observations: number;
 }
 
 export interface MetricForecast {

@@ -147,16 +147,16 @@ export const Dashboard: React.FC = () => {
               </div>
               <div>
                 <h3 className="card-title">Next-period forecast</h3>
-                <p className="text-sm text-text-secondary">Linear regression estimate</p>
+                <p className="text-sm text-text-secondary">Linear regression productivity estimate</p>
               </div>
             </div>
 
             {forecast ? (
               <div className="space-y-3">
                 <div className="p-4 bg-muted rounded-lg border border-border">
-                  <p className="text-xs font-medium text-text-secondary">Estimated next week work</p>
+                  <p className="text-xs font-medium text-text-secondary">Estimated next-period productivity</p>
                   <p className="metric-value mt-1">
-                    {forecast.status === 'valid' ? `~${forecast.predicted_value} hrs/wk` : '—'}
+                    {forecast.status === 'valid' ? `~${forecast.predicted_value}/100` : '—'}
                   </p>
                   <p className="text-sm text-text-secondary mt-1">
                     Trend: <span className="font-medium text-text-primary capitalize">{forecast.trend}</span>

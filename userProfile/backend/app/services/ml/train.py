@@ -14,11 +14,11 @@ For every model the same 8 steps happen, matching classic sklearn usage:
 
     1. df = pd.read_csv(...)              (data_loader.py)
     2. clean + select X, y                (preprocessing.py)
-    3. X_train, X_test, y_train, y_test = train_test_split(...)
+    3. X_train, X_test, y_train, y_test = chronological_split(...)
     4. model = LinearRegression() / LogisticRegression()
     5. model.fit(X_train, y_train)
     6. predictions = model.predict(X_test)
-    7. compute metrics (MAE/R2 for regression, accuracy for classification)
+    7. compute held-out regression/classification metrics
     8. joblib.dump(model, "models/....joblib")
 """
 
@@ -28,9 +28,16 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.metrics import accuracy_score, mean_absolute_error, r2_score
-from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import (
+    accuracy_score,
+    explained_variance_score,
+    f1_score,
+    mean_absolute_error,
+    mean_squared_error,
+    precision_score,
+    recall_score,
+    r2_score,
+)
 from app.services.ml.data_loader import load_dataset
 from app.services.ml.preprocessing import (
     FINANCIAL_FEATURES,
@@ -48,6 +55,22 @@ MODELS_DIR = Path(__file__).resolve().parent / "models"
 MODELS_DIR.mkdir(exist_ok=True)
 
 
+def _chronological_split(X: pd.DataFrame, y: pd.Series):
+    """Keep the newest observations out of training to match forecasting use."""
+    split_at = max(1, int(len(X) * 0.8))
+    return X.iloc[:split_at], X.iloc[split_at:], y.iloc[:split_at], y.iloc[split_at:]
+
+
+def _regression_metrics(y_true, predictions, prefix: str = "") -> dict:
+    values = {
+        "mae": mean_absolute_error(y_true, predictions),
+        "rmse": mean_squared_error(y_true, predictions) ** 0.5,
+        "r2": r2_score(y_true, predictions),
+        "explained_variance": explained_variance_score(y_true, predictions),
+    }
+    return {f"{prefix}{key}": round(float(value), 3) for key, value in values.items()}
+
+
 def train_productivity_model() -> dict:
     """LinearRegression: predict productivity_score from work/focus hours."""
     df = load_dataset("productivity")
@@ -56,18 +79,19 @@ def train_productivity_model() -> dict:
     X = df[PRODUCTIVITY_FEATURES]
     y = df[PRODUCTIVITY_TARGET]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = _chronological_split(X, y)
 
     model = LinearRegression()
     model.fit(X_train, y_train)
 
-    predictions = model.predict(X_test)
-    mae = mean_absolute_error(y_test, predictions)
-    r2 = r2_score(y_test, predictions)
+    train_predictions = model.predict(X_train)
+    test_predictions = model.predict(X_test)
+    metrics = {
+        **_regression_metrics(y_train, train_predictions, "train_"),
+        **_regression_metrics(y_test, test_predictions, "test_"),
+    }
 
-    print(f"[productivity] LinearRegression  MAE={mae:.2f}  R2={r2:.3f}")
+    print(f"[productivity] LinearRegression  MAE={metrics['test_mae']:.2f}  R2={metrics['test_r2']:.3f}")
 
     joblib.dump(model, MODELS_DIR / "productivity_model.joblib")
     return {
@@ -78,8 +102,7 @@ def train_productivity_model() -> dict:
         "target": PRODUCTIVITY_TARGET,
         "training_rows": len(X_train),
         "test_rows": len(X_test),
-        "mae": round(float(mae), 3),
-        "r2": round(float(r2), 3),
+        **metrics,
     }
 
 
@@ -91,18 +114,19 @@ def train_financial_model() -> dict:
     X = df[FINANCIAL_FEATURES]
     y = df[FINANCIAL_TARGET]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = _chronological_split(X, y)
 
     model = LinearRegression()
     model.fit(X_train, y_train)
 
-    predictions = model.predict(X_test)
-    mae = mean_absolute_error(y_test, predictions)
-    r2 = r2_score(y_test, predictions)
+    train_predictions = model.predict(X_train)
+    test_predictions = model.predict(X_test)
+    metrics = {
+        **_regression_metrics(y_train, train_predictions, "train_"),
+        **_regression_metrics(y_test, test_predictions, "test_"),
+    }
 
-    print(f"[financial]    LinearRegression  MAE={mae:.2f}  R2={r2:.3f}")
+    print(f"[financial]    LinearRegression  MAE={metrics['test_mae']:.2f}  R2={metrics['test_r2']:.3f}")
 
     joblib.dump(model, MODELS_DIR / "financial_model.joblib")
     return {
@@ -113,8 +137,7 @@ def train_financial_model() -> dict:
         "target": FINANCIAL_TARGET,
         "training_rows": len(X_train),
         "test_rows": len(X_test),
-        "mae": round(float(mae), 3),
-        "r2": round(float(r2), 3),
+        **metrics,
     }
 
 
@@ -131,17 +154,28 @@ def train_habit_model() -> dict:
     X = df[HABIT_FEATURES]
     y = df[HABIT_TARGET]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = _chronological_split(X, y)
 
     model = LogisticRegression()
     model.fit(X_train, y_train)
 
-    predictions = model.predict(X_test)
-    accuracy = accuracy_score(y_test, predictions)
+    train_predictions = model.predict(X_train)
+    test_predictions = model.predict(X_test)
+    classification_metrics = {
+        "train_accuracy": accuracy_score(y_train, train_predictions),
+        "test_accuracy": accuracy_score(y_test, test_predictions),
+        "train_precision": precision_score(y_train, train_predictions, zero_division=0),
+        "test_precision": precision_score(y_test, test_predictions, zero_division=0),
+        "train_recall": recall_score(y_train, train_predictions, zero_division=0),
+        "test_recall": recall_score(y_test, test_predictions, zero_division=0),
+        "train_f1": f1_score(y_train, train_predictions, zero_division=0),
+        "test_f1": f1_score(y_test, test_predictions, zero_division=0),
+    }
+    classification_metrics = {
+        key: round(float(value), 3) for key, value in classification_metrics.items()
+    }
 
-    print(f"[habit]        LogisticRegression  Accuracy={accuracy:.2f}")
+    print(f"[habit]        LogisticRegression  Accuracy={classification_metrics['test_accuracy']:.2f}")
 
     joblib.dump(model, MODELS_DIR / "habit_model.joblib")
     return {
@@ -152,7 +186,7 @@ def train_habit_model() -> dict:
         "target": HABIT_TARGET,
         "training_rows": len(X_train),
         "test_rows": len(X_test),
-        "accuracy": round(float(accuracy), 3),
+        **classification_metrics,
     }
 
 

@@ -22,7 +22,7 @@ import {
 } from '../data/mockData';
 
 const API_BASE_URL = 'http://localhost:8000/api';
-async function fetchApi<T>(endpoint: string, options: RequestInit = {}, retryAfterDevLogin = true): Promise<T> {
+async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     headers: {

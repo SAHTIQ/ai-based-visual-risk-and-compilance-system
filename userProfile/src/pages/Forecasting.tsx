@@ -31,7 +31,7 @@ const PERIOD_WORDS: Record<Period, { short: string; next: string; average: strin
 };
 
 function metricTitle(metric: MetricKey) {
-  if (metric === 'productivity') return 'Work Hours';
+  if (metric === 'productivity') return 'Productivity Score';
   if (metric === 'financial') return 'Expenses';
   return 'Habit Consistency';
 }
@@ -42,7 +42,7 @@ function formatValue(value: number | null | undefined, metric: MetricKey) {
     return `₹${value.toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
   }
   if (metric === 'habits') return `${value.toFixed(1)}%`;
-  return `${value.toFixed(1)} hrs`;
+  return `${value.toFixed(1)}/100`;
 }
 
 function changeText(current: number, predicted: number | null) {
@@ -122,7 +122,7 @@ function Chart({
             <g key={i}>
               <line x1={pad.left} x2={width - pad.right} y1={yy} y2={yy} stroke="var(--chart-grid)" strokeWidth="1" />
               <text x={pad.left - 8} y={yy + 4} textAnchor="end" fontSize="11" fill="var(--chart-axis)">
-                {metric === 'financial' ? `₹${Math.round(value).toLocaleString()}` : metric === 'habits' ? `${Math.round(value)}%` : `${value.toFixed(0)}h`}
+                {metric === 'financial' ? `₹${Math.round(value).toLocaleString()}` : metric === 'habits' ? `${Math.round(value)}%` : `${value.toFixed(0)}/100`}
               </text>
             </g>
           );
@@ -333,7 +333,7 @@ export const Forecasting: React.FC = () => {
           <Card>
             <h3 className="card-title">Model Performance Comparison</h3>
             <p className="text-sm text-text-secondary mt-1 mb-4">
-              Chronological held-out evaluation from the three ML models
+              Chronological held-out evaluation for the selected model
             </p>
             {forecast.model_evaluations?.length ? (
               <div className="overflow-x-auto">
@@ -342,30 +342,22 @@ export const Forecasting: React.FC = () => {
                     <div key={model.model} className="rounded-lg border border-border p-4 bg-muted">
                       <h4 className="font-semibold text-text-primary">{model.model}</h4>
                       <div className="mt-3 space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Train MAE</span>
-                          <strong>{model.train_mae.toFixed(3)}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Test MAE</span>
-                          <strong>{model.test_mae.toFixed(3)}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Train RMSE</span>
-                          <strong>{model.train_rmse.toFixed(3)}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Test RMSE</span>
-                          <strong>{model.test_rmse.toFixed(3)}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Test R²</span>
-                          <strong>{model.test_r2 ?? '—'}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-secondary">Explained Variance</span>
-                          <strong>{model.explained_variance ?? '—'}</strong>
-                        </div>
+                        {model.test_accuracy !== null ? (
+                          <>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test accuracy</span><strong>{model.test_accuracy.toFixed(3)}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test precision</span><strong>{model.test_precision?.toFixed(3) ?? '—'}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test recall</span><strong>{model.test_recall?.toFixed(3) ?? '—'}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test F1</span><strong>{model.test_f1?.toFixed(3) ?? '—'}</strong></div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test MAE</span><strong>{model.test_mae?.toFixed(3) ?? '—'}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test RMSE</span><strong>{model.test_rmse?.toFixed(3) ?? '—'}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Test R²</span><strong>{model.test_r2 ?? '—'}</strong></div>
+                            <div className="flex justify-between"><span className="text-text-secondary">Explained variance</span><strong>{model.explained_variance ?? '—'}</strong></div>
+                          </>
+                        )}
+                        <div className="flex justify-between border-t border-border pt-2"><span className="text-text-secondary">Train / test rows</span><strong>{model.train_observations} / {model.test_observations}</strong></div>
                       </div>
                     </div>
                   ))}
@@ -373,18 +365,19 @@ export const Forecasting: React.FC = () => {
               </div>
             ) : forecast.evaluation ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-lg bg-muted border border-border">
-                  <p className="text-xs text-text-secondary font-medium">MAE</p>
-                  <p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.mae}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted border border-border">
-                  <p className="text-xs text-text-secondary font-medium">RMSE</p>
-                  <p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.rmse}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted border border-border">
-                  <p className="text-xs text-text-secondary font-medium">R²</p>
-                  <p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.r2 ?? '—'}</p>
-                </div>
+                {forecast.evaluation.accuracy !== undefined ? (
+                  <>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">Accuracy</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.accuracy ?? '—'}</p></div>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">Precision</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.precision ?? '—'}</p></div>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">F1</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.f1 ?? '—'}</p></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">MAE</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.mae ?? '—'}</p></div>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">RMSE</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.rmse ?? '—'}</p></div>
+                    <div className="p-4 rounded-lg bg-muted border border-border"><p className="text-xs text-text-secondary font-medium">R²</p><p className="text-xl font-semibold mt-1 tabular-nums">{forecast.evaluation.r2 ?? '—'}</p></div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 dark:bg-amber-950/30 dark:border-amber-800">

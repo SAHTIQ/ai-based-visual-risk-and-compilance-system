@@ -7,7 +7,7 @@ developer can trace the whole flow end to end:
     dataset (CSV)
         -> data_loader.py   (load raw rows)
         -> preprocessing.py (clean + build X / y)
-        -> train.py         (train_test_split -> model.fit -> evaluate -> joblib.dump)
+        -> train.py         (chronological split -> model.fit -> evaluate -> joblib.dump)
         -> predict.py       (joblib.load -> model.predict, used by FastAPI)
 
 Run `python -m app.services.ml.train` from the backend/ folder to (re)train

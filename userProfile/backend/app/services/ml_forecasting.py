@@ -62,7 +62,7 @@ def _next_period_label(period: ForecastPeriod) -> str:
 
 
 def _model_evaluation_entry(model_key: str) -> List[ModelEvaluation]:
-    """One-row 'model comparison' table built from the metrics train.py saved."""
+    """Expose the independently calculated metrics saved by train.py."""
     info = ml_predict.load_model_info().get(model_key)
     if not info:
         return []
@@ -70,27 +70,31 @@ def _model_evaluation_entry(model_key: str) -> List[ModelEvaluation]:
         return [
             ModelEvaluation(
                 model=info["algorithm"],
-                train_mae=info["mae"],
-                test_mae=info["mae"],
-                train_rmse=info["mae"],
-                test_rmse=info["mae"],
-                train_r2=info.get("r2"),
-                test_r2=info.get("r2"),
-                explained_variance=info.get("r2"),
+                train_mae=info["train_mae"],
+                test_mae=info["test_mae"],
+                train_rmse=info["train_rmse"],
+                test_rmse=info["test_rmse"],
+                train_r2=info.get("train_r2"),
+                test_r2=info.get("test_r2"),
+                explained_variance=info.get("test_explained_variance"),
+                train_observations=info["training_rows"],
+                test_observations=info["test_rows"],
             )
         ]
-    # classification (habit model): report accuracy via the r2-shaped fields
-    # so the existing frontend card can still render something meaningful.
+    # Classification models have classification metrics, not regression metrics.
     return [
         ModelEvaluation(
             model=info["algorithm"],
-            train_mae=0.0,
-            test_mae=round(1.0 - info["accuracy"], 3),
-            train_rmse=0.0,
-            test_rmse=round(1.0 - info["accuracy"], 3),
-            train_r2=info["accuracy"],
-            test_r2=info["accuracy"],
-            explained_variance=info["accuracy"],
+            train_accuracy=info["train_accuracy"],
+            test_accuracy=info["test_accuracy"],
+            train_precision=info["train_precision"],
+            test_precision=info["test_precision"],
+            train_recall=info["train_recall"],
+            test_recall=info["test_recall"],
+            train_f1=info["train_f1"],
+            test_f1=info["test_f1"],
+            train_observations=info["training_rows"],
+            test_observations=info["test_rows"],
         )
     ]
 
@@ -177,7 +181,8 @@ def get_productivity_forecast(db: Session, user_id: int, period: ForecastPeriod 
         "Actual values are computed directly from your WorkSession history (focused hours / total work hours).",
         f"The prediction comes from a {info.get('algorithm', 'Linear Regression')} model trained on the "
         "productivity dataset (work_hours, focus_hours, distraction_hours, deep_work_sessions -> productivity_score).",
-        f"Model evaluation on held-out data: MAE={info.get('mae')}, R\u00b2={info.get('r2')}.",
+        f"Model evaluation on chronological held-out data: MAE={info.get('test_mae')}, RMSE={info.get('test_rmse')}, "
+        f"R\u00b2={info.get('test_r2')}, Explained Variance={info.get('test_explained_variance')}.",
         f"Predicted {_next_period_label(period).lower()} productivity: {predicted_next:.1f}/100.",
     ]
 
@@ -188,14 +193,18 @@ def get_productivity_forecast(db: Session, user_id: int, period: ForecastPeriod 
         current_value=round(current, 1),
         predicted_value=round(predicted_next, 1),
         trend=trend,
-        confidence=info.get("r2"),
+        confidence=info.get("test_r2"),
         model=str(info.get("algorithm", "linear_regression")).lower().replace(" ", "_"),
         baseline_moving_average=round(float(np.mean(actual_values[-3:])), 1),
         historical_observations=len(periods),
         required_observations=MIN_REQUIRED_OBSERVATIONS,
         status="valid",
         reason=None,
-        evaluation=ForecastEvaluation(mae=info.get("mae", 0.0), rmse=info.get("mae", 0.0), r2=info.get("r2")),
+        evaluation=ForecastEvaluation(
+            mae=info.get("test_mae", 0.0),
+            rmse=info.get("test_rmse", 0.0),
+            r2=info.get("test_r2"),
+        ),
         model_evaluations=_model_evaluation_entry("productivity"),
         evidence=evidence,
         historical_series=[{"label": labels[i], "value": round(actual_values[i], 1)} for i in range(len(labels))],
@@ -251,7 +260,8 @@ def get_financial_forecast(db: Session, user_id: int, period: ForecastPeriod = "
         "Actual values are your own recorded expenses, summed per period.",
         f"The prediction comes from a {info.get('algorithm', 'Linear Regression')} model trained on the "
         "finance dataset (weekly_income, savings, budget -> weekly_expenses).",
-        f"Model evaluation on held-out data: MAE={info.get('mae')}, R\u00b2={info.get('r2')}.",
+        f"Model evaluation on chronological held-out data: MAE={info.get('test_mae')}, RMSE={info.get('test_rmse')}, "
+        f"R\u00b2={info.get('test_r2')}, Explained Variance={info.get('test_explained_variance')}.",
         f"Predicted {_next_period_label(period).lower()} expenses: {predicted_next:.1f}.",
     ]
 
@@ -262,14 +272,18 @@ def get_financial_forecast(db: Session, user_id: int, period: ForecastPeriod = "
         current_value=current,
         predicted_value=round(predicted_next, 1),
         trend=trend,
-        confidence=info.get("r2"),
+        confidence=info.get("test_r2"),
         model=str(info.get("algorithm", "linear_regression")).lower().replace(" ", "_"),
         baseline_moving_average=round(float(np.mean(actual_values[-3:])), 1),
         historical_observations=len(periods),
         required_observations=MIN_REQUIRED_OBSERVATIONS,
         status="valid",
         reason=None,
-        evaluation=ForecastEvaluation(mae=info.get("mae", 0.0), rmse=info.get("mae", 0.0), r2=info.get("r2")),
+        evaluation=ForecastEvaluation(
+            mae=info.get("test_mae", 0.0),
+            rmse=info.get("test_rmse", 0.0),
+            r2=info.get("test_r2"),
+        ),
         model_evaluations=_model_evaluation_entry("financial"),
         evidence=evidence,
         historical_series=[{"label": labels[i], "value": actual_values[i]} for i in range(len(labels))],
@@ -333,7 +347,8 @@ def get_habit_forecast(db: Session, user_id: int, period: ForecastPeriod = "week
         "Actual values are your own habit completion rate per period (completed / total habits).",
         f"The prediction comes from a {info.get('algorithm', 'Logistic Regression')} classifier trained on the "
         "habit dataset (routine_consistency -> good habit day, healthy_habit_score \u2265 95).",
-        f"Model evaluation on held-out data: accuracy={info.get('accuracy')}.",
+        f"Model evaluation on chronological held-out data: accuracy={info.get('test_accuracy')}, "
+        f"precision={info.get('test_precision')}, recall={info.get('test_recall')}, F1={info.get('test_f1')}.",
         f"Predicted {_next_period_label(period).lower()} habit consistency: {predicted_next:.1f}%.",
     ]
 
@@ -344,7 +359,7 @@ def get_habit_forecast(db: Session, user_id: int, period: ForecastPeriod = "week
         current_value=current,
         predicted_value=round(predicted_next, 1),
         trend=trend,
-        confidence=info.get("accuracy"),
+        confidence=info.get("test_accuracy"),
         model=str(info.get("algorithm", "logistic_regression")).lower().replace(" ", "_"),
         baseline_moving_average=round(float(np.mean(actual_values[-3:])), 1),
         historical_observations=len(periods),
@@ -352,9 +367,10 @@ def get_habit_forecast(db: Session, user_id: int, period: ForecastPeriod = "week
         status="valid",
         reason=None,
         evaluation=ForecastEvaluation(
-            mae=round(1.0 - info.get("accuracy", 0.0), 3),
-            rmse=round(1.0 - info.get("accuracy", 0.0), 3),
-            r2=info.get("accuracy"),
+            accuracy=info.get("test_accuracy"),
+            precision=info.get("test_precision"),
+            recall=info.get("test_recall"),
+            f1=info.get("test_f1"),
         ),
         model_evaluations=_model_evaluation_entry("habit"),
         evidence=evidence,
