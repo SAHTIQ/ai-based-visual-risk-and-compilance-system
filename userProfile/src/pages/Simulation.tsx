@@ -93,10 +93,20 @@ export const Simulation: React.FC = () => {
       {!loading && result && result.evidence_status === 'valid' && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">{(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <ScenarioCard key={key} type={key} scenario={result.scenarios[key]} />)}</div>
+          <Card className="border-primary/40 bg-primary-light/40">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Recommended Action</p>
+                <p className="mt-2 text-xl font-bold leading-8 text-text-primary sm:text-2xl">{result.scenarios.best.recommendation}</p>
+                <p className="mt-1 text-sm text-text-secondary">Based on the 30-day Best Scenario simulation.</p>
+              </div>
+              <Orbit className="hidden h-8 w-8 shrink-0 text-primary sm:block" aria-hidden="true" />
+            </div>
+          </Card>
           <Card><div className="flex items-start justify-between gap-3 pb-4 mb-3 border-b border-border"><div><h2 className="card-title">30-Day Scenario Comparison</h2><p className="text-sm text-text-secondary mt-1">Daily simulated productivity score; these are scenarios, not guaranteed predictions.</p></div><ShieldCheck className="w-5 h-5 text-primary" /></div><TrajectoryChart scenarios={result.scenarios} /></Card>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card><h2 className="card-title">Evidence & Rules</h2><p className="text-sm text-text-secondary mt-1">Personal history and the existing Milestone 2 forecast used by the engine.</p><div className="mt-4 space-y-4">{(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <div key={key}><p className="text-sm font-medium">{result.scenarios[key].name}</p><ul className="mt-1 space-y-1 text-sm text-text-secondary list-disc pl-5">{result.scenarios[key].evidence.slice(0, 3).map((item) => <li key={item}>{item}</li>)}{result.scenarios[key].rules.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div></Card>
-            <Card><h2 className="card-title">Recommendations</h2><p className="text-sm text-text-secondary mt-1">Deterministic guidance tied to each simulated trajectory.</p><div className="mt-4 space-y-3">{(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <div key={key} className="flex gap-3"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: scenarioMeta[key].color }} /><p className="text-sm"><span className="font-medium">{result.scenarios[key].name}:</span> {result.scenarios[key].recommendation}</p></div>)}</div><p className="text-xs text-text-secondary mt-5 pt-4 border-t border-border">{result.note} Historical observations used: {result.historical_observations} distinct days.</p></Card>
+            <Card><h2 className="card-title">Simulation Notes</h2><p className="text-sm text-text-secondary mt-1">Traceability and reliability details for this run.</p><div className="mt-4 space-y-3"><div className="flex gap-3"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-primary" /><p className="text-sm">The recommendation above comes directly from the Best Scenario returned by the simulation engine.</p></div><div className="flex gap-3"><ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-primary" /><p className="text-sm">Historical observations used: {result.historical_observations} distinct days.</p></div></div><p className="text-xs text-text-secondary mt-5 pt-4 border-t border-border">{result.note}</p></Card>
           </div>
         </>
       )}

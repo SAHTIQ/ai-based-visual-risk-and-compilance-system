@@ -11,29 +11,50 @@ import { RecentActivityList } from '../components/dashboard/RecentActivityList';
 import { Card } from '../components/common/Card';
 import { PageHeader } from '../components/layout/PageHeader';
 import { api } from '../services/api';
-import type { WorkSession, ProductivityAnalytics, MetricForecast, WorkActivityType } from '../types';
+import type { WorkSession, ProductivityAnalytics, MetricForecast, SimulationResponse, WorkActivityType } from '../types';
 import { useApp } from '../context/AppContext';
+import { getLocalDateKey } from '../context/AppContext';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { showToast } = useApp();
+  const { showToast, selectedDate } = useApp();
 
   const [sessions, setSessions] = useState<WorkSession[]>([]);
   const [analytics, setAnalytics] = useState<ProductivityAnalytics | null>(null);
   const [forecast, setForecast] = useState<MetricForecast | null>(null);
+  const [simulation, setSimulation] = useState<SimulationResponse | null>(null);
 
-  const activeSession = sessions.find((s) => s.status === 'in_progress') || null;
+  const activeSession = sessions.find((session) => {
+    return session.status === 'in_progress' && getLocalDateKey(new Date(session.started_at)) === selectedDate;
+  }) || null;
+  const selectedDaySessions = sessions.filter((session) => {
+    const sessionDate = getLocalDateKey(new Date(session.started_at));
+    return sessionDate === selectedDate && session.status === 'completed';
+  });
+  const selectedDayWorkHours = selectedDaySessions.reduce((total, session) => total + session.duration_minutes / 60, 0);
+  const selectedDayFocusHours = selectedDaySessions
+    .filter((session) => ['Coding', 'Study', 'Project', 'Reading'].includes(session.activity_type))
+    .reduce((total, session) => total + session.duration_minutes / 60, 0);
+  const selectedDayProductivity = selectedDayWorkHours > 0 ? (selectedDayFocusHours / selectedDayWorkHours) * 100 : null;
+  const readableSelectedDate = new Date(`${selectedDate}T12:00:00`).toLocaleDateString([], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   const loadDashboardData = async () => {
     try {
-      const [sess, anal, fc] = await Promise.all([
+      const [sess, anal, fc, sim] = await Promise.all([
         api.getWorkSessions(),
         api.getProductivityAnalytics(),
         api.getProductivityForecast(),
+        api.getFutureSimulation(),
       ]);
       setSessions(sess);
       setAnalytics(anal);
       setForecast(fc);
+      setSimulation(sim);
     } catch {
       // Fallback
     }
@@ -69,21 +90,21 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description="A concise view of work time, habits, and upcoming forecast."
+        description={`Tracking ${readableSelectedDate}. Work and productivity metrics use that day's completed sessions.`}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard
           title="Work Time"
-          value={`${analytics?.total_work_hours || 0} hrs`}
-          subtitle="Total logged work time"
+          value={`${selectedDayWorkHours.toFixed(1)} hrs`}
+          subtitle="Selected day completed work"
           icon={Clock}
           onClick={() => navigate('/productivity')}
         />
         <SummaryCard
           title="Focus Time"
-          value={`${analytics?.total_focus_hours || 0} hrs`}
-          subtitle="Coding, study & projects"
+          value={`${selectedDayFocusHours.toFixed(1)} hrs`}
+          subtitle="Selected day focused work"
           icon={Target}
           iconBgColor="bg-sky-50"
           iconColor="text-sky-700"
@@ -91,8 +112,8 @@ export const Dashboard: React.FC = () => {
         />
         <SummaryCard
           title="Productivity Score"
-          value={analytics ? `${analytics.productivity_score} / 100` : '—'}
-          subtitle="Weighted score formula"
+          value={selectedDayProductivity === null ? '—' : `${selectedDayProductivity.toFixed(1)} / 100`}
+          subtitle={selectedDayProductivity === null ? 'No completed work for this day' : 'Focus ratio for selected day'}
           icon={Award}
           iconBgColor="bg-emerald-50"
           iconColor="text-emerald-700"
@@ -185,6 +206,28 @@ export const Dashboard: React.FC = () => {
           </button>
         </Card>
       </div>
+
+      <Card className="border-primary/40 bg-primary-light/30">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Best Scenario Recommendation</p>
+            <h2 className="mt-2 text-xl font-bold leading-8 text-text-primary">Recommended Action</h2>
+            <p className="mt-1 text-2xl font-bold leading-9 text-text-primary">
+              {simulation?.evidence_status === 'valid'
+                ? simulation.scenarios.best.recommendation
+                : 'Run a simulation to view the recommended action.'}
+            </p>
+            <p className="mt-2 text-sm text-text-secondary">Based on the 30-day Best Scenario simulation.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/simulation')}
+            className="inline-flex h-10 shrink-0 items-center justify-center rounded-button bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover"
+          >
+            View Future Simulation
+          </button>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProfileOverviewCard />

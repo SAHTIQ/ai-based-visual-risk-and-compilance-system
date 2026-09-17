@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, ChevronDown, Menu, User, Settings, LogOut, Sun, Moon, Monitor } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { Bell, CalendarDays, ChevronDown, Menu, User, Settings, LogOut, Sun, Moon, Monitor } from 'lucide-react';
+import { getLocalDateKey, useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -22,13 +22,14 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
-  const { profile, settings, updateSettings, activities } = useApp();
+  const { profile, settings, updateSettings, activities, selectedDate, setSelectedDate } = useApp();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const userName = profile?.name || 'Alex Morgan';
   const userInitials = userName
@@ -67,6 +68,45 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setShowDatePicker(!showDatePicker);
+              setShowThemeMenu(false);
+              setShowNotifications(false);
+              setShowUserMenu(false);
+            }}
+            aria-label={`Tracking date: ${selectedDate}`}
+            className="icon-btn"
+          >
+            <CalendarDays className="w-4 h-4" />
+          </button>
+          {showDatePicker && (
+            <div className="absolute right-0 mt-2 w-64 bg-surface rounded-lg border border-border shadow-card p-3 z-50">
+              <label htmlFor="tracking-date" className="block text-xs font-medium text-text-secondary mb-1.5">
+                Tracking date
+              </label>
+              <input
+                id="tracking-date"
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+                className="input-field"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDate(getLocalDateKey());
+                  setShowDatePicker(false);
+                }}
+                className="mt-2 text-xs font-medium text-primary hover:underline"
+              >
+                Return to today
+              </button>
+            </div>
+          )}
+        </div>
         <div className="relative">
           <button
             type="button"

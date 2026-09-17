@@ -19,6 +19,9 @@ export interface ToastMessage {
 }
 
 interface AppContextType {
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+
   // Profile
   profile: UserProfile | null;
   isLoadingProfile: boolean;
@@ -66,10 +69,20 @@ interface AppContextType {
   removeToast: (id: string) => void;
 }
 
+export const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
+  const [selectedDate, setSelectedDateState] = useState(
+    () => localStorage.getItem('selected-tracking-date') || getLocalDateKey(),
+  );
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
@@ -106,6 +119,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [settings?.theme]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const setSelectedDate = useCallback((date: string) => {
+    setSelectedDateState(date);
+    localStorage.setItem('selected-tracking-date', date);
+  }, []);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
@@ -348,6 +366,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        selectedDate,
+        setSelectedDate,
         profile,
         isLoadingProfile,
         updateProfile,

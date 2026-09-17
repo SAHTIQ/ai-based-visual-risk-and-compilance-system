@@ -4,7 +4,6 @@ import { api } from '../services/api';
 import { ActiveSessionWidget } from '../components/behavior/ActiveSessionWidget';
 import { ActivityHeatmap } from '../components/behavior/ActivityHeatmap';
 import { ProductivityTrend } from '../components/behavior/ProductivityTrend';
-import { TimeAllocationChart } from '../components/behavior/TimeAllocationChart';
 import { PeakHoursCard } from '../components/behavior/PeakHoursCard';
 import { SummaryCard } from '../components/common/SummaryCard';
 import { Card } from '../components/common/Card';
@@ -111,44 +110,6 @@ export const Productivity: React.FC = () => {
         leastProductiveDay={analytics?.least_productive_day || '—'}
         consistencyPct={analytics?.consistency_pct || 0}
       />
-
-      {analytics && <TimeAllocationChart timeAllocation={analytics.time_allocation} />}
-
-      <Card>
-        <div className="pb-4 mb-4 border-b border-border">
-          <h3 className="card-title">Productivity score breakdown</h3>
-          <p className="text-sm text-text-secondary mt-1">Documented 3-part weighted formula</p>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-sm mb-1.5">
-              <span>Focus ratio (35 pts max)</span>
-              <span className="font-semibold tabular-nums">{analytics?.score_breakdown.focus_component || 0} pts</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div className="bg-primary rounded-full h-2" style={{ width: `${((analytics?.score_breakdown.focus_component || 0) / 35) * 100}%` }} />
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-sm mb-1.5">
-              <span>Work regularity (35 pts max)</span>
-              <span className="font-semibold tabular-nums">{analytics?.score_breakdown.consistency_component || 0} pts</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div className="bg-emerald-500 rounded-full h-2" style={{ width: `${((analytics?.score_breakdown.consistency_component || 0) / 35) * 100}%` }} />
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-sm mb-1.5">
-              <span>Habit execution (30 pts max)</span>
-              <span className="font-semibold tabular-nums">{analytics?.score_breakdown.habit_component || 0} pts</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div className="bg-sky-500 rounded-full h-2" style={{ width: `${((analytics?.score_breakdown.habit_component || 0) / 30) * 100}%` }} />
-            </div>
-          </div>
-        </div>
-      </Card>
 
       <Card>
         <div className="pb-4 mb-4 border-b border-border">
