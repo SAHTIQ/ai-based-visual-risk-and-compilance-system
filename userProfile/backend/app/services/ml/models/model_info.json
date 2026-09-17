@@ -1,0 +1,45 @@
+{
+  "productivity": {
+    "name": "Productivity Model",
+    "algorithm": "LinearRegression",
+    "task": "regression",
+    "features": [
+      "work_hours",
+      "focus_hours",
+      "distraction_hours",
+      "deep_work_sessions"
+    ],
+    "target": "productivity_score",
+    "training_rows": 672,
+    "test_rows": 168,
+    "mae": 7.486,
+    "r2": 0.286
+  },
+  "financial": {
+    "name": "Financial Model",
+    "algorithm": "LinearRegression",
+    "task": "regression",
+    "features": [
+      "weekly_income",
+      "savings",
+      "budget"
+    ],
+    "target": "weekly_expenses",
+    "training_rows": 672,
+    "test_rows": 168,
+    "mae": 189.352,
+    "r2": 0.857
+  },
+  "habit": {
+    "name": "Habit Consistency Model",
+    "algorithm": "LogisticRegression",
+    "task": "classification",
+    "features": [
+      "routine_consistency"
+    ],
+    "target": "good_habit_day",
+    "training_rows": 672,
+    "test_rows": 168,
+    "accuracy": 0.732
+  }
+}
