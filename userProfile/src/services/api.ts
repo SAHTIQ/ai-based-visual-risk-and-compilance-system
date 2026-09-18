@@ -503,6 +503,31 @@ export const api = {
     return fetchApi<SimulationResponse>('/simulation/future');
   },
 
+  async getSimulationBaseline(): Promise<import('../types').BaselineMetrics> {
+    return fetchApi<import('../types').BaselineMetrics>('/simulation/baseline');
+  },
+
+  async runCustomSimulation(
+    params: import('../types').WhatIfParameters,
+    save: boolean = false
+  ): Promise<SimulationResponse> {
+    return fetchApi<SimulationResponse>(`/simulation/simulate?save=${save}`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  },
+
+  async getSimulationHistory(): Promise<import('../types').SimulationHistoryItem[]> {
+    return fetchApi<import('../types').SimulationHistoryItem[]>('/simulation/history');
+  },
+
+  async deleteSimulationHistoryItem(historyId: number): Promise<void> {
+    await fetchApi(`/simulation/history/${historyId}`, {
+      method: 'DELETE',
+    });
+  },
+
+
 
   // ================= Dashboard Summary =================
   async getDashboardSummary(): Promise<DashboardSummary> {

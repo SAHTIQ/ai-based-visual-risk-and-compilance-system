@@ -7,6 +7,7 @@ from app.models.habit import HabitRecord
 from app.models.activity import ActivityHistory
 from app.models.settings import UserSettings
 from app.models.work_session import WorkSession
+from app.models.simulation import SimulationHistory
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "ActivityHistory",
     "UserSettings",
     "WorkSession",
+    "SimulationHistory",
 ]

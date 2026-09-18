@@ -261,22 +261,122 @@ export interface SimulationDay {
   distraction_hours: number;
   focus_ratio: number;
   productivity_score: number;
+  savings?: number | null;
+  monthly_spending?: number | null;
+  burnout_pct?: number | null;
+  wellbeing_score?: number | null;
+  emergency_runway_months?: number | null;
+}
+
+export interface SimulationSummary {
+  outcome: string;
+  projected_average_productivity: number | null;
+  projected_total_work_hours: number | null;
+  change_from_current: number | null;
+  projected_savings?: number | null;
+  savings_change?: number | null;
+  projected_burnout?: number | null;
+  burnout_change?: number | null;
+  projected_wellbeing?: number | null;
+  wellbeing_change?: number | null;
+  projected_runway?: number | null;
+  runway_change?: number | null;
 }
 
 export interface SimulationScenario {
   name: string;
   daily_values: SimulationDay[];
-  summary: {
-    outcome: string;
-    projected_average_productivity: number | null;
-    projected_total_work_hours: number | null;
-    change_from_current: number | null;
-  };
+  summary: SimulationSummary;
   supporting_factors: string[];
   evidence: string[];
   rules: string[];
   confidence: number | null;
   recommendation: string;
+}
+
+export interface BaselineMetrics {
+  savings: number;
+  monthly_spending: number;
+  study_load_hrs_week: number;
+  sleep_hrs_night: number;
+  exercise_days_week: number;
+  burnout_pct: number;
+  wellbeing_score: number;
+  emergency_runway_months: number;
+  records_used: number;
+  data_range_start?: string | null;
+  data_range_end?: string | null;
+  baseline_date?: string | null;
+  data_status: 'valid' | 'insufficient_evidence';
+  has_savings: boolean;
+  has_spending: boolean;
+  has_study: boolean;
+  has_sleep: boolean;
+  has_exercise: boolean;
+}
+
+export interface WhatIfParameters {
+  study_load_hrs_week?: number;
+  sleep_hrs_night?: number;
+  monthly_spending?: number;
+  savings?: number;
+  exercise_days_week?: number;
+  horizon_days: number;
+}
+
+export interface MetricImpact {
+  metric: string;
+  label: string;
+  baseline: number;
+  simulated: number;
+  change: number;
+  pct_change?: number | null;
+  unit: string;
+  direction_is_favorable: boolean;
+}
+
+export interface SensitivityItem {
+  feature_name: string;
+  label: string;
+  impact_level: 'High' | 'Medium-High' | 'Medium' | 'Low';
+  impact_score: number;
+  outcome_metric: string;
+  description: string;
+}
+
+export interface RuleTraceItem {
+  condition_id: string;
+  condition_name: string;
+  condition_text: string;
+  input_values: Record<string, any>;
+  is_satisfied: boolean;
+  status_label: string;
+  impact_explanation: string;
+}
+
+export interface WhyRecommendationDetail {
+  selected_scenario: string;
+  selected_features: Record<string, any>;
+  baseline_values: Record<string, any>;
+  scenario_changes: Record<string, any>;
+  simulated_impact: MetricImpact[];
+  rules_evaluated: number;
+  rules_triggered: string[];
+  primary_contributing_factor: string;
+  evidence_used: string;
+  confidence_pct: number;
+  final_recommendation: string;
+}
+
+export interface SimulationEvidenceMeta {
+  records_used: number;
+  historical_range: string;
+  features_used: string[];
+  insufficient_features: string[];
+  confidence_pct: number;
+  method: string;
+  is_sufficient: boolean;
+  note: string;
 }
 
 export interface SimulationResponse {
@@ -285,4 +385,27 @@ export interface SimulationResponse {
   historical_observations: number;
   scenarios: Record<'best' | 'expected' | 'risk', SimulationScenario>;
   note: string;
+  baseline?: BaselineMetrics;
+  impact?: MetricImpact[];
+  sensitivity?: SensitivityItem[];
+  evidence_meta?: SimulationEvidenceMeta;
+  rule_trace?: RuleTraceItem[];
+  why_recommendation?: WhyRecommendationDetail;
+  ai_explanation?: string;
+  recommendation?: string;
+  history_id?: number | null;
 }
+
+export interface SimulationHistoryItem {
+  id: number;
+  scenario_name: string;
+  horizon_days: number;
+  created_at: string;
+  confidence?: number | null;
+  recommendation: string;
+  baseline: BaselineMetrics;
+  impact: MetricImpact[];
+  ai_explanation: string;
+  why_recommendation?: WhyRecommendationDetail | null;
+}
+

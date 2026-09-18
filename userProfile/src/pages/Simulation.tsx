@@ -1,112 +1,1170 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Info, Orbit, RefreshCw, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Brain,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Database,
+  Gauge,
+  HelpCircle,
+  History,
+  Layers,
+  Minus,
+  Orbit,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  ShieldAlert,
+  ShieldCheck,
+  Sliders,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  Trash2,
+  Zap,
+} from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { PageHeader } from '../components/layout/PageHeader';
 import { api } from '../services/api';
-import type { SimulationResponse, SimulationScenario } from '../types';
+import type {
+  BaselineMetrics,
+  SimulationHistoryItem,
+  SimulationResponse,
+  SimulationScenario,
+  WhatIfParameters,
+} from '../types';
 
 const scenarioMeta = {
-  best: { label: 'Best Scenario', color: '#16A34A', icon: TrendingUp, tone: 'border-emerald-200 bg-emerald-50/50' },
-  expected: { label: 'Expected Scenario', color: '#2563EB', icon: Orbit, tone: 'border-blue-200 bg-blue-50/50' },
-  risk: { label: 'Risk Scenario', color: '#DC2626', icon: TrendingDown, tone: 'border-red-200 bg-red-50/50' },
+  best: { label: 'Optimistic Scenario', color: '#16A34A', icon: TrendingUp, tone: 'border-emerald-500/30 bg-emerald-500/5' },
+  expected: { label: 'Expected Scenario', color: '#2563EB', icon: Orbit, tone: 'border-blue-500/30 bg-blue-500/5' },
+  risk: { label: 'Risk Scenario', color: '#DC2626', icon: TrendingDown, tone: 'border-red-500/30 bg-red-500/5' },
 } as const;
 
-function formatNumber(value: number | null, suffix = '') {
-  return value === null ? '—' : `${value.toFixed(1)}${suffix}`;
+const HORIZON_OPTIONS = [
+  { days: 30, label: '30 Days', short: '30D' },
+  { days: 90, label: '90 Days', short: '90D' },
+  { days: 180, label: '6 Months', short: '6M' },
+  { days: 365, label: '1 Year', short: '1Y' },
+] as const;
+
+function formatCurrency(val: number | null | undefined): string {
+  if (val === null || val === undefined) return '—';
+  return `₹${Math.round(val).toLocaleString('en-IN')}`;
 }
 
-function TrajectoryChart({ scenarios }: { scenarios: SimulationResponse['scenarios'] }) {
+function formatNumber(val: number | null | undefined, suffix = '', decimals = 1): string {
+  if (val === null || val === undefined) return '—';
+  return `${val.toFixed(decimals)}${suffix}`;
+}
+
+// Interactive Multi-Metric Trajectory Chart with Hover Tooltip
+function MultiHorizonTrajectoryChart({
+  scenarios,
+  horizonDays,
+}: {
+  scenarios: SimulationResponse['scenarios'];
+  horizonDays: number;
+}) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
   const width = 1000;
-  const height = 280;
-  const pad = { left: 48, right: 22, top: 20, bottom: 34 };
-  const values = Object.values(scenarios).flatMap((scenario) => scenario.daily_values.map((day) => day.productivity_score));
-  if (!values.length) return <div className="h-[280px] flex items-center justify-center text-sm text-text-secondary">No trajectory is available.</div>;
-  const min = Math.max(0, Math.min(...values) - 5);
-  const max = Math.min(100, Math.max(...values) + 5);
-  const x = (index: number) => pad.left + (index / 29) * (width - pad.left - pad.right);
-  const y = (value: number) => pad.top + ((max - value) / Math.max(max - min, 1)) * (height - pad.top - pad.bottom);
-  const path = (scenario: SimulationScenario) => scenario.daily_values.map((day, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(day.productivity_score)}`).join(' ');
+  const height = 300;
+  const pad = { left: 55, right: 25, top: 25, bottom: 40 };
+
+  const activeScenarios = Object.values(scenarios);
+  if (!activeScenarios.length || !activeScenarios[0]?.daily_values?.length) {
+    return <div className="h-[280px] flex items-center justify-center text-sm text-text-secondary">No trajectory is available.</div>;
+  }
+
+  const stepCount = activeScenarios[0].daily_values.length;
+  const allScores = activeScenarios.flatMap((s) => s.daily_values.map((d) => d.productivity_score));
+  const min = Math.max(0, Math.min(...allScores) - 5);
+  const max = Math.min(100, Math.max(...allScores) + 5);
+
+  const x = (index: number) => pad.left + (index / Math.max(1, stepCount - 1)) * (width - pad.left - pad.right);
+  const y = (val: number) => pad.top + ((max - val) / Math.max(max - min, 1)) * (height - pad.top - pad.bottom);
+  const path = (scenario: SimulationScenario) =>
+    scenario.daily_values.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(d.productivity_score)}`).join(' ');
+
+  const hoveredStep = hoverIndex !== null && activeScenarios[0].daily_values[hoverIndex] ? activeScenarios[0].daily_values[hoverIndex] : null;
+
   return (
-    <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[280px]" role="img" aria-label="30-day productivity scenario comparison">
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="w-full h-[300px] select-none"
+        role="img"
+        aria-label={`${horizonDays}-day multi-scenario trajectory comparison`}
+        onMouseLeave={() => setHoverIndex(null)}
+      >
+        {/* Y-Axis Grid & Labels */}
         {[0, 1, 2, 3, 4].map((tick) => {
           const value = min + ((max - min) * (4 - tick)) / 4;
-          return <g key={tick}><line x1={pad.left} x2={width - pad.right} y1={y(value)} y2={y(value)} stroke="var(--chart-grid)" /><text x={pad.left - 8} y={y(value) + 4} textAnchor="end" fontSize="11" fill="var(--chart-axis)">{value.toFixed(0)}</text></g>;
+          return (
+            <g key={tick}>
+              <line x1={pad.left} x2={width - pad.right} y1={y(value)} y2={y(value)} stroke="var(--chart-grid)" strokeDasharray="3 3" />
+              <text x={pad.left - 10} y={y(value) + 4} textAnchor="end" fontSize="11" fill="var(--chart-axis)">
+                {value.toFixed(0)}
+              </text>
+            </g>
+          );
         })}
-        {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => (
-          <path key={key} d={path(scenarios[key])} fill="none" stroke={scenarioMeta[key].color} strokeWidth="2.5" strokeLinecap="round" />
+
+        {/* Lines */}
+        {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => {
+          if (!scenarios[key]) return null;
+          return (
+            <path
+              key={key}
+              d={path(scenarios[key])}
+              fill="none"
+              stroke={scenarioMeta[key].color}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              className="transition-all duration-300"
+            />
+          );
+        })}
+
+        {/* Hover Crosshair */}
+        {hoverIndex !== null && (
+          <line
+            x1={x(hoverIndex)}
+            x2={x(hoverIndex)}
+            y1={pad.top}
+            y2={height - pad.bottom}
+            stroke="var(--color-primary)"
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+          />
+        )}
+
+        {/* Hover Points & Interactive Hit Targets */}
+        {Array.from({ length: stepCount }).map((_, idx) => (
+          <g key={idx}>
+            <rect
+              x={x(idx) - (width - pad.left - pad.right) / stepCount / 2}
+              y={pad.top}
+              width={(width - pad.left - pad.right) / stepCount}
+              height={height - pad.top - pad.bottom}
+              fill="transparent"
+              className="cursor-pointer"
+              onMouseEnter={() => setHoverIndex(idx)}
+            />
+            {hoverIndex === idx &&
+              (Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => {
+                const day = scenarios[key]?.daily_values[idx];
+                if (!day) return null;
+                return (
+                  <circle
+                    key={key}
+                    cx={x(idx)}
+                    cy={y(day.productivity_score)}
+                    r="5"
+                    fill={scenarioMeta[key].color}
+                    stroke="var(--color-surface)"
+                    strokeWidth="2"
+                  />
+                );
+              })}
+          </g>
         ))}
-        {[0, 9, 19, 29].map((index) => <text key={index} x={x(index)} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--chart-axis)">Day {index + 1}</text>)}
+
+        {/* X-Axis Ticks */}
+        {[0, Math.floor(stepCount * 0.33), Math.floor(stepCount * 0.66), stepCount - 1].map((idx) => {
+          const day = activeScenarios[0]?.daily_values[idx];
+          const label = day ? `Day ${Math.round(((idx + 1) / stepCount) * horizonDays)}` : `Step ${idx + 1}`;
+          return (
+            <text key={idx} x={x(idx)} y={height - 12} textAnchor="middle" fontSize="11" fill="var(--chart-axis)">
+              {label}
+            </text>
+          );
+        })}
       </svg>
-      <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
-        {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <span key={key} className="inline-flex items-center gap-2"><span className="w-6 h-0.5" style={{ background: scenarioMeta[key].color }} />{scenarioMeta[key].label}</span>)}
+
+      {/* Floating Interactive Hover Tooltip */}
+      {hoveredStep && (
+        <div className="mt-2 p-3 bg-muted/90 rounded-lg border border-border backdrop-blur flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-2 font-medium">
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span>Timeline Inspection: {hoveredStep.date}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-text-secondary">
+            {hoveredStep.savings !== null && hoveredStep.savings !== undefined && (
+              <span>Savings: <strong className="text-text-primary">{formatCurrency(hoveredStep.savings)}</strong></span>
+            )}
+            {hoveredStep.monthly_spending !== null && hoveredStep.monthly_spending !== undefined && (
+              <span>Spending: <strong className="text-text-primary">{formatCurrency(hoveredStep.monthly_spending)}</strong></span>
+            )}
+            {hoveredStep.burnout_pct !== null && hoveredStep.burnout_pct !== undefined && (
+              <span>Burnout: <strong className="text-text-primary">{hoveredStep.burnout_pct}%</strong></span>
+            )}
+            {hoveredStep.wellbeing_score !== null && hoveredStep.wellbeing_score !== undefined && (
+              <span>Well-being: <strong className="text-text-primary">{hoveredStep.wellbeing_score}/100</strong></span>
+            )}
+            {hoveredStep.emergency_runway_months !== null && hoveredStep.emergency_runway_months !== undefined && (
+              <span>Runway: <strong className="text-text-primary">{hoveredStep.emergency_runway_months} mo</strong></span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-5 text-xs text-text-secondary mt-3">
+        {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => (
+          <span key={key} className="inline-flex items-center gap-2">
+            <span className="w-6 h-1 rounded" style={{ background: scenarioMeta[key].color }} />
+            {scenarioMeta[key].label}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
+// Scenario Card (Optimistic, Expected, Risk)
 function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: keyof typeof scenarioMeta }) {
   const meta = scenarioMeta[type];
   const Icon = meta.icon;
   return (
-    <Card className={`border ${meta.tone}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div><div className="flex items-center gap-2"><Icon className="w-4 h-4" style={{ color: meta.color }} /><h2 className="card-title">{scenario.name}</h2></div><p className="text-sm text-text-secondary mt-2">{scenario.summary.outcome}</p></div>
-        <span className="text-xs font-medium text-text-secondary whitespace-nowrap">{scenario.confidence === null ? 'No confidence' : `${Math.round(scenario.confidence * 100)}% reliability`}</span>
+    <Card className={`border ${meta.tone} flex flex-col justify-between`}>
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4" style={{ color: meta.color }} />
+              <h3 className="font-semibold text-text-primary text-base">{scenario.name}</h3>
+            </div>
+            <p className="text-xs text-text-secondary mt-1.5">{scenario.summary.outcome}</p>
+          </div>
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-surface border border-border text-text-secondary whitespace-nowrap">
+            {scenario.confidence === null ? 'No confidence' : `${Math.round(scenario.confidence * 100)}% reliability`}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border/60 text-center">
+          <div className="p-2 rounded bg-surface/50">
+            <p className="text-[10px] text-text-secondary uppercase">Avg Score</p>
+            <p className="text-sm font-bold text-text-primary mt-0.5">{formatNumber(scenario.summary.projected_average_productivity)}</p>
+          </div>
+          <div className="p-2 rounded bg-surface/50">
+            <p className="text-[10px] text-text-secondary uppercase">Savings</p>
+            <p className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(scenario.summary.projected_savings)}</p>
+          </div>
+          <div className="p-2 rounded bg-surface/50">
+            <p className="text-[10px] text-text-secondary uppercase">Burnout</p>
+            <p className="text-sm font-bold text-text-primary mt-0.5">{formatNumber(scenario.summary.projected_burnout, '%')}</p>
+          </div>
+        </div>
+
+        {scenario.supporting_factors.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {scenario.supporting_factors.map((f, i) => (
+              <p key={i} className="text-[11px] text-text-secondary flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-primary" /> {f}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-border">
-        <div><p className="text-xs text-text-secondary">Avg. score</p><p className="metric-value mt-1">{formatNumber(scenario.summary.projected_average_productivity)}</p></div>
-        <div><p className="text-xs text-text-secondary">30-day hours</p><p className="metric-value mt-1">{formatNumber(scenario.summary.projected_total_work_hours)}</p></div>
-        <div><p className="text-xs text-text-secondary">Baseline change</p><p className="metric-value mt-1">{formatNumber(scenario.summary.change_from_current, '')}</p></div>
+
+      <div className="mt-4 pt-3 border-t border-border/60">
+        <p className="text-xs text-text-primary leading-relaxed">
+          <span className="font-semibold text-primary">Recommendation: </span>
+          {scenario.recommendation}
+        </p>
       </div>
-      <p className="text-sm text-text-primary mt-4"><span className="font-medium">Recommendation:</span> {scenario.recommendation}</p>
     </Card>
   );
 }
 
 export const Simulation: React.FC = () => {
   const [result, setResult] = useState<SimulationResponse | null>(null);
+  const [baseline, setBaseline] = useState<BaselineMetrics | null>(null);
+  const [history, setHistory] = useState<SimulationHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [simulating, setSimulating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runSimulation = async () => {
+  // Custom What-If Form Controls
+  const [studyLoad, setStudyLoad] = useState<number>(32);
+  const [sleepHrs, setSleepHrs] = useState<number>(7.8);
+  const [spending, setSpending] = useState<number>(8500);
+  const [exerciseDays, setExerciseDays] = useState<number>(3);
+  const [horizonDays, setHorizonDays] = useState<number>(30);
+
+  // Expandable Section Toggles
+  const [showWhyRec, setShowWhyRec] = useState<boolean>(false);
+  const [showRuleTrace, setShowRuleTrace] = useState<boolean>(false);
+  const [showEvidence, setShowEvidence] = useState<boolean>(false);
+  const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [savedSuccessMsg, setSavedSuccessMsg] = useState<string | null>(null);
+
+  const loadData = async () => {
     setLoading(true);
     setError(null);
-    try { setResult(await api.getFutureSimulation()); } catch (err) { setResult(null); setError(err instanceof Error ? err.message : 'Unable to run the simulation.'); } finally { setLoading(false); }
+    try {
+      const [baseData, simData, histData] = await Promise.all([
+        api.getSimulationBaseline(),
+        api.getFutureSimulation(),
+        api.getSimulationHistory().catch(() => []),
+      ]);
+
+      setBaseline(baseData);
+      setResult(simData);
+      setHistory(histData);
+
+      // Initialize What-If fields from real baseline
+      setStudyLoad(baseData.study_load_hrs_week);
+      setSleepHrs(baseData.sleep_hrs_night);
+      setSpending(baseData.monthly_spending);
+      setExerciseDays(baseData.exercise_days_week);
+      setHorizonDays(simData.simulation_period || 30);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to initialize simulation.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { runSimulation(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleRunSimulation = async (saveRecord = false) => {
+    setSimulating(true);
+    setError(null);
+    setSavedSuccessMsg(null);
+    try {
+      const params: WhatIfParameters = {
+        study_load_hrs_week: studyLoad,
+        sleep_hrs_night: sleepHrs,
+        monthly_spending: spending,
+        exercise_days_week: exerciseDays,
+        horizon_days: horizonDays,
+      };
+
+      const res = await api.runCustomSimulation(params, saveRecord);
+      setResult(res);
+      if (res.baseline) {
+        setBaseline(res.baseline);
+      }
+
+      if (saveRecord) {
+        setSavedSuccessMsg('Simulation successfully saved to your personal history.');
+        const updatedHist = await api.getSimulationHistory();
+        setHistory(updatedHist);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to execute custom simulation.');
+    } finally {
+      setSimulating(false);
+    }
+  };
+
+  const handleResetToBaseline = () => {
+    if (!baseline) return;
+    setStudyLoad(baseline.study_load_hrs_week);
+    setSleepHrs(baseline.sleep_hrs_night);
+    setSpending(baseline.monthly_spending);
+    setExerciseDays(baseline.exercise_days_week);
+    setHorizonDays(30);
+  };
+
+  const handleDeleteHistory = async (id: number) => {
+    try {
+      await api.deleteSimulationHistoryItem(id);
+      setHistory((prev) => prev.filter((h) => h.id !== id));
+    } catch (err) {
+      setError('Unable to delete history entry.');
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Future Scenario Simulation" description="Evidence-based 30-day trajectories from your history and productivity forecast." />
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div><p className="section-title">Simulation Controls</p><p className="text-sm text-text-secondary mt-1">Period: 30 days · calculated from your authenticated data</p></div>
-          <button type="button" onClick={runSimulation} disabled={loading} className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-button bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-60"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />{loading ? 'Running…' : 'Run Simulation'}</button>
-        </div>
-      </Card>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Header */}
+      <PageHeader
+        title="Simulation Engine (M3)"
+        description="Evidence-based scenario modeling, dynamic what-if simulation, sensitivity analysis, and explainable rule tracing."
+      />
 
-      {loading && <Card><p className="py-16 text-center text-sm text-text-secondary">Preparing your 30-day scenarios…</p></Card>}
-      {!loading && error && <Card><div className="py-10 text-center"><AlertTriangle className="w-8 h-8 mx-auto text-red-600" /><p className="mt-3 font-medium">Simulation unavailable</p><p className="text-sm text-text-secondary mt-1">{error}</p></div></Card>}
-      {!loading && result && result.evidence_status === 'insufficient_evidence' && <Card><div className="py-10 text-center"><Info className="w-8 h-8 mx-auto text-amber-600" /><h2 className="mt-3 font-semibold">Insufficient Evidence</h2><p className="text-sm text-text-secondary mt-1 max-w-lg mx-auto">{result.note} Human review is required before relying on a future scenario.</p></div></Card>}
-      {!loading && result && result.evidence_status === 'valid' && (
+      {/* Dataset & Baseline Status Bar */}
+      {baseline && (
+        <Card className="border-border/80 bg-surface/60 backdrop-blur">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  baseline.data_status === 'valid'
+                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                }`}
+              >
+                {baseline.data_status === 'valid' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                {baseline.data_status === 'valid' ? 'Data Status: Active & Valid' : 'Insufficient Evidence'}
+              </span>
+              <span className="text-xs text-text-secondary">
+                Records Used: <strong className="text-text-primary">{baseline.records_used}</strong>
+              </span>
+              <span className="text-xs text-text-secondary">
+                Historical Range: <strong className="text-text-primary">{baseline.data_range_start || 'N/A'} → {baseline.data_range_end || 'N/A'}</strong>
+              </span>
+              <span className="text-xs text-text-secondary">
+                Baseline Record: <strong className="text-text-primary">{baseline.baseline_date || 'Latest'}</strong>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHistory(!showHistory)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium border border-border hover:bg-muted text-text-secondary transition"
+              >
+                <History className="w-3.5 h-3.5" />
+                History ({history.length})
+              </button>
+              <button
+                type="button"
+                onClick={loadData}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium border border-border hover:bg-muted text-text-secondary transition disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Sync Baseline
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Persistent Simulation History Drawer / Collapsible Section */}
+      {showHistory && (
+        <Card className="border-primary/30 bg-muted/40">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-text-primary text-sm">Personal Simulation History</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHistory(false)}
+              className="text-xs text-text-secondary hover:text-text-primary"
+            >
+              Close
+            </button>
+          </div>
+
+          {history.length === 0 ? (
+            <p className="py-6 text-center text-xs text-text-secondary">No saved simulations yet. Click "Save to History" when running a scenario.</p>
+          ) : (
+            <div className="mt-3 space-y-2 max-h-60 overflow-y-auto pr-1">
+              {history.map((item) => (
+                <div key={item.id} className="p-2.5 rounded bg-surface border border-border flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <strong className="text-text-primary">{item.scenario_name}</strong>
+                      <span className="px-1.5 py-0.2 rounded bg-muted text-[10px] text-text-secondary">{item.horizon_days} Days</span>
+                      <span className="text-[10px] text-text-secondary">{item.created_at.replace('T', ' ').substring(0, 16)}</span>
+                    </div>
+                    <p className="text-[11px] text-text-secondary mt-1 truncate max-w-xl">{item.recommendation}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteHistory(item.id)}
+                      className="p-1 text-text-secondary hover:text-red-500 rounded transition"
+                      title="Delete saved run"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Loading & Error States */}
+      {loading && (
+        <Card><p className="py-14 text-center text-sm text-text-secondary">Extracting baseline metrics from your actual data…</p></Card>
+      )}
+
+      {!loading && error && (
+        <Card>
+          <div className="py-8 text-center">
+            <AlertTriangle className="w-7 h-7 mx-auto text-red-500" />
+            <p className="mt-2 font-medium text-text-primary text-sm">Simulation Error</p>
+            <p className="text-xs text-text-secondary mt-1">{error}</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Insufficient Evidence Warning Banner */}
+      {!loading && result && result.evidence_status === 'insufficient_evidence' && (
+        <Card className="border-amber-500/40 bg-amber-500/10">
+          <div className="flex items-start gap-4 p-2">
+            <ShieldAlert className="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <h2 className="text-base font-bold text-amber-500">INSUFFICIENT EVIDENCE</h2>
+              <p className="text-xs text-text-primary mt-1 leading-relaxed">
+                {result.note} The system does not have enough completed historical records to reliably simulate multi-factor future projections.
+                Human review is recommended instead of producing a misleading result.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Main Simulation View */}
+      {!loading && result && result.evidence_status === 'valid' && baseline && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">{(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <ScenarioCard key={key} type={key} scenario={result.scenarios[key]} />)}</div>
-          <Card className="border-primary/40 bg-primary-light/40">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Recommended Action</p>
-                <p className="mt-2 text-xl font-bold leading-8 text-text-primary sm:text-2xl">{result.scenarios.best.recommendation}</p>
-                <p className="mt-1 text-sm text-text-secondary">Based on the 30-day Best Scenario simulation.</p>
+          {/* FEATURE 1 — CURRENT STATE / BASELINE CARD */}
+          <Card className="border-border">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold text-text-primary text-base">Current State / Simulation Baseline</h2>
               </div>
-              <Orbit className="hidden h-8 w-8 shrink-0 text-primary sm:block" aria-hidden="true" />
+              <span className="text-xs text-text-secondary">Source: Latest User Database Records</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Savings</p>
+                <p className="text-base font-bold text-text-primary mt-1">{formatCurrency(baseline.savings)}</p>
+                <span className="text-[10px] text-text-secondary">Liquid capital</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Monthly Spending</p>
+                <p className="text-base font-bold text-text-primary mt-1">{formatCurrency(baseline.monthly_spending)}</p>
+                <span className="text-[10px] text-text-secondary">Outflow rate</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Study Load</p>
+                <p className="text-base font-bold text-text-primary mt-1">{formatNumber(baseline.study_load_hrs_week, ' hrs/wk')}</p>
+                <span className="text-[10px] text-text-secondary">Weekly academic</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Sleep</p>
+                <p className="text-base font-bold text-text-primary mt-1">{formatNumber(baseline.sleep_hrs_night, ' hrs/nt')}</p>
+                <span className="text-[10px] text-text-secondary">Rest duration</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Burnout</p>
+                <p className={`text-base font-bold mt-1 ${baseline.burnout_pct > 50 ? 'text-red-500' : 'text-emerald-500'}`}>
+                  {formatNumber(baseline.burnout_pct, '%')}
+                </p>
+                <span className="text-[10px] text-text-secondary">Fatigue index</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Well-being</p>
+                <p className="text-base font-bold text-primary mt-1">{formatNumber(baseline.wellbeing_score, '/100')}</p>
+                <span className="text-[10px] text-text-secondary">Health balance</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/60 border border-border">
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Emergency Runway</p>
+                <p className={`text-base font-bold mt-1 ${baseline.emergency_runway_months < 3 ? 'text-amber-500' : 'text-text-primary'}`}>
+                  {formatNumber(baseline.emergency_runway_months, ' mo')}
+                </p>
+                <span className="text-[10px] text-text-secondary">Buffer coverage</span>
+              </div>
             </div>
           </Card>
-          <Card><div className="flex items-start justify-between gap-3 pb-4 mb-3 border-b border-border"><div><h2 className="card-title">30-Day Scenario Comparison</h2><p className="text-sm text-text-secondary mt-1">Daily simulated productivity score; these are scenarios, not guaranteed predictions.</p></div><ShieldCheck className="w-5 h-5 text-primary" /></div><TrajectoryChart scenarios={result.scenarios} /></Card>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card><h2 className="card-title">Evidence & Rules</h2><p className="text-sm text-text-secondary mt-1">Personal history and the existing Milestone 2 forecast used by the engine.</p><div className="mt-4 space-y-4">{(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => <div key={key}><p className="text-sm font-medium">{result.scenarios[key].name}</p><ul className="mt-1 space-y-1 text-sm text-text-secondary list-disc pl-5">{result.scenarios[key].evidence.slice(0, 3).map((item) => <li key={item}>{item}</li>)}{result.scenarios[key].rules.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div></Card>
-            <Card><h2 className="card-title">Simulation Notes</h2><p className="text-sm text-text-secondary mt-1">Traceability and reliability details for this run.</p><div className="mt-4 space-y-3"><div className="flex gap-3"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-primary" /><p className="text-sm">The recommendation above comes directly from the Best Scenario returned by the simulation engine.</p></div><div className="flex gap-3"><ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-primary" /><p className="text-sm">Historical observations used: {result.historical_observations} distinct days.</p></div></div><p className="text-xs text-text-secondary mt-5 pt-4 border-t border-border">{result.note}</p></Card>
+
+          {/* FEATURE 2 & FEATURE 4 — CUSTOM WHAT-IF SIMULATOR & HORIZON CONTROLS */}
+          <Card className="border-primary/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-primary" />
+                  <h2 className="font-semibold text-text-primary text-base">Custom What-If Simulator</h2>
+                </div>
+                <p className="text-xs text-text-secondary mt-1">
+                  Adjust personal variables to simulate systemic outcomes across financial, cognitive, and health dimensions.
+                </p>
+              </div>
+
+              {/* Simulation Horizon Selector */}
+              <div className="flex items-center gap-1.5 bg-muted p-1 rounded-lg border border-border">
+                <span className="text-[11px] font-medium text-text-secondary px-2">Horizon:</span>
+                {HORIZON_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.days}
+                    type="button"
+                    onClick={() => setHorizonDays(opt.days)}
+                    className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
+                      horizonDays === opt.days
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Interactive Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
+              {/* Study Load */}
+              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-text-primary">Study Load</span>
+                  <span className="font-bold text-primary">{studyLoad} hrs/week</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStudyLoad((prev) => Math.max(0, Math.round(prev - 2)))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="60"
+                    step="1"
+                    value={studyLoad}
+                    onChange={(e) => setStudyLoad(Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStudyLoad((prev) => Math.min(80, Math.round(prev + 2)))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-text-secondary">Baseline: {baseline.study_load_hrs_week} hrs/wk</p>
+              </div>
+
+              {/* Sleep Duration */}
+              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-text-primary">Sleep Duration</span>
+                  <span className="font-bold text-primary">{sleepHrs.toFixed(1)} hrs/night</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSleepHrs((prev) => Math.max(4.0, Number((prev - 0.5).toFixed(1))))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    type="range"
+                    min="4.0"
+                    max="11.0"
+                    step="0.1"
+                    value={sleepHrs}
+                    onChange={(e) => setSleepHrs(Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSleepHrs((prev) => Math.min(12.0, Number((prev + 0.5).toFixed(1))))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-text-secondary">Baseline: {baseline.sleep_hrs_night} hrs/night</p>
+              </div>
+
+              {/* Monthly Spending */}
+              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-text-primary">Monthly Spending</span>
+                  <span className="font-bold text-primary">{formatCurrency(spending)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSpending((prev) => Math.max(1000, Math.round(prev - 500)))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    type="range"
+                    min="2000"
+                    max="30000"
+                    step="250"
+                    value={spending}
+                    onChange={(e) => setSpending(Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSpending((prev) => Math.min(60000, Math.round(prev + 500)))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-text-secondary">Baseline: {formatCurrency(baseline.monthly_spending)}</p>
+              </div>
+
+              {/* Exercise Frequency */}
+              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-text-primary">Exercise Routine</span>
+                  <span className="font-bold text-primary">{exerciseDays} days/week</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExerciseDays((prev) => Math.max(0, prev - 1))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="7"
+                    step="1"
+                    value={exerciseDays}
+                    onChange={(e) => setExerciseDays(Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setExerciseDays((prev) => Math.min(7, prev + 1))}
+                    className="p-1 rounded bg-surface border border-border hover:bg-muted text-text-secondary"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-text-secondary">Baseline: {baseline.exercise_days_week} days/wk</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-5 pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={handleResetToBaseline}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium border border-border hover:bg-muted text-text-secondary transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset to Baseline
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleRunSimulation(true)}
+                  disabled={simulating}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-button text-xs font-semibold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition disabled:opacity-60"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Save & Simulate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRunSimulation(false)}
+                  disabled={simulating}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-button bg-primary text-white text-xs font-bold hover:bg-primary-hover shadow-sm transition disabled:opacity-60"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${simulating ? 'animate-spin' : ''}`} />
+                  {simulating ? 'Simulating…' : 'Run Simulation'}
+                </button>
+              </div>
+            </div>
+
+            {savedSuccessMsg && (
+              <p className="mt-3 text-xs text-emerald-500 font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {savedSuccessMsg}
+              </p>
+            )}
+          </Card>
+
+          {/* FEATURE 3 — BEFORE VS AFTER IMPACT COMPARISON */}
+          {result.impact && result.impact.length > 0 && (
+            <Card className="border-border">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-primary" />
+                  <h2 className="font-semibold text-text-primary text-base">Simulation Impact (Before vs After)</h2>
+                </div>
+                <span className="text-xs text-text-secondary">Horizon: {result.simulation_period} Days</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-border/80 text-text-secondary bg-muted/40 font-semibold">
+                      <th className="py-2.5 px-3">Metric</th>
+                      <th className="py-2.5 px-3">Baseline</th>
+                      <th className="py-2.5 px-3">Simulated ({result.simulation_period}D)</th>
+                      <th className="py-2.5 px-3">Absolute Change</th>
+                      <th className="py-2.5 px-3">Relative Shift</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {result.impact.map((imp) => {
+                      const isZero = Math.abs(imp.change) < 0.001;
+                      const sign = imp.change > 0 ? '+' : '';
+                      const unitStr = imp.unit === '₹' ? '₹' : ` ${imp.unit}`;
+                      const formattedBase = imp.unit === '₹' ? formatCurrency(imp.baseline) : `${imp.baseline}${unitStr}`;
+                      const formattedSim = imp.unit === '₹' ? formatCurrency(imp.simulated) : `${imp.simulated}${unitStr}`;
+                      const formattedChange = imp.unit === '₹' ? `${sign}₹${Math.round(imp.change).toLocaleString('en-IN')}` : `${sign}${imp.change}${unitStr}`;
+
+                      return (
+                        <tr key={imp.metric} className="hover:bg-muted/30 transition">
+                          <td className="py-2 px-3 font-medium text-text-primary">{imp.label}</td>
+                          <td className="py-2 px-3 text-text-secondary">{formattedBase}</td>
+                          <td className="py-2 px-3 font-semibold text-text-primary">{formattedSim}</td>
+                          <td className="py-2 px-3">
+                            {isZero ? (
+                              <span className="text-text-secondary">0.0</span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center gap-1 font-medium ${
+                                  imp.direction_is_favorable ? 'text-emerald-500' : 'text-red-500'
+                                }`}
+                              >
+                                {imp.change > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                                {formattedChange}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-text-secondary">
+                            {imp.pct_change !== null && imp.pct_change !== undefined ? (
+                              <span className={imp.pct_change >= 0 ? 'text-text-primary' : 'text-text-secondary'}>
+                                {imp.pct_change > 0 ? `+${imp.pct_change}%` : `${imp.pct_change}%`}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* EXISTING OUTCOME COMPARISON: OPTIMISTIC, EXPECTED, RISK */}
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-secondary mb-3">Outcome Scenarios Comparison</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => {
+                if (!result.scenarios[key]) return null;
+                return <ScenarioCard key={key} type={key} scenario={result.scenarios[key]} />;
+              })}
+            </div>
+          </div>
+
+          {/* SIMULATION TIMELINE TRAJECTORY CHART */}
+          <Card className="border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-3 border-b border-border">
+              <div>
+                <h2 className="font-semibold text-text-primary text-base">Simulation Timeline ({result.simulation_period}-Day Trajectory)</h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Hover over the curve to inspect multi-metric projections across the horizon. Projections are evidence-based scenarios.
+                </p>
+              </div>
+              <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+            </div>
+            <MultiHorizonTrajectoryChart scenarios={result.scenarios} horizonDays={result.simulation_period} />
+          </Card>
+
+          {/* FEATURE 5 — SENSITIVITY ANALYSIS */}
+          {result.sensitivity && result.sensitivity.length > 0 && (
+            <Card className="border-border">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-primary" />
+                  <h2 className="font-semibold text-text-primary text-base">Sensitivity Analysis (One-At-A-Time Elasticity)</h2>
+                </div>
+                <span className="text-xs text-text-secondary">Perturbation Range: ±20%</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {result.sensitivity.map((item) => {
+                  const levelColor =
+                    item.impact_level === 'High'
+                      ? 'bg-red-500'
+                      : item.impact_level === 'Medium-High'
+                      ? 'bg-amber-500'
+                      : item.impact_level === 'Medium'
+                      ? 'bg-blue-500'
+                      : 'bg-emerald-500';
+
+                  const badgeStyle =
+                    item.impact_level === 'High'
+                      ? 'text-red-500 bg-red-500/10 border-red-500/20'
+                      : item.impact_level === 'Medium-High'
+                      ? 'text-amber-500 bg-amber-500/10 border-amber-500/20'
+                      : item.impact_level === 'Medium'
+                      ? 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+                      : 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+
+                  return (
+                    <div key={item.feature_name} className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-text-primary">{item.label}</span>
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${badgeStyle}`}>
+                          {item.impact_level}
+                        </span>
+                      </div>
+
+                      {/* Bar Visualization */}
+                      <div className="w-full bg-border/60 h-2 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${levelColor}`} style={{ width: `${Math.max(8, item.impact_score)}%` }} />
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-text-secondary">
+                        <span>Target: <strong>{item.outcome_metric}</strong></span>
+                        <span>Elasticity Score: {item.impact_score}/100</span>
+                      </div>
+                      <p className="text-[11px] text-text-secondary leading-normal">{item.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="text-[11px] text-text-secondary mt-4 pt-3 border-t border-border">
+                <strong>Methodology:</strong> Features are individually perturbed by ±20% while holding all other variables constant. The relative variance across terminal savings runway, burnout, and composite well-being is mapped to deterministically calibrated sensitivity tiers.
+              </p>
+            </Card>
+          )}
+
+          {/* FEATURE 7 — AI EXPLANATION & RECOMMENDATION */}
+          <Card className="border-primary/40 bg-primary-light/20">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-primary" />
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-primary">AI Simulation Analysis & Recommendation</h2>
+                </div>
+                <p className="text-base font-bold text-text-primary leading-snug">
+                  {result.recommendation || result.scenarios.expected.recommendation}
+                </p>
+                <p className="text-xs text-text-secondary leading-relaxed pt-1">
+                  {result.ai_explanation}
+                </p>
+              </div>
+              <Sparkles className="w-8 h-8 text-primary shrink-0 hidden sm:block" />
+            </div>
+
+            {/* Expandable "Why This Recommendation?" and "Rule Trace" Triggers */}
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-primary/20">
+              <button
+                type="button"
+                onClick={() => setShowWhyRec(!showWhyRec)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-primary" />
+                {showWhyRec ? 'Hide Calculation' : 'Why This Recommendation?'}
+                {showWhyRec ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowRuleTrace(!showRuleTrace)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                {showRuleTrace ? 'Hide Rule Trace' : 'Inspect Rule Trace'}
+                {showRuleTrace ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowEvidence(!showEvidence)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                {showEvidence ? 'Hide Evidence' : 'Evidence & Confidence Details'}
+                {showEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </Card>
+
+          {/* COLLAPSIBLE: WHY THIS RECOMMENDATION? */}
+          {showWhyRec && result.why_recommendation && (
+            <Card className="border-border bg-surface">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-primary" />
+                  <h3 className="font-semibold text-text-primary text-sm">Recommendation Calculation Breakdown</h3>
+                </div>
+                <span className="text-xs font-semibold text-primary">{result.why_recommendation.confidence_pct}% Confidence</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-3 rounded bg-muted/40 border border-border space-y-1.5">
+                  <p className="font-semibold text-text-primary">1. Scenario & Primary Driver</p>
+                  <p className="text-text-secondary">Scenario: <strong className="text-text-primary">{result.why_recommendation.selected_scenario}</strong></p>
+                  <p className="text-text-secondary">Primary Contributing Factor: <strong className="text-primary">{result.why_recommendation.primary_contributing_factor}</strong></p>
+                  <p className="text-text-secondary">Evidence Used: {result.why_recommendation.evidence_used}</p>
+                </div>
+
+                <div className="p-3 rounded bg-muted/40 border border-border space-y-1.5">
+                  <p className="font-semibold text-text-primary">2. Triggered Business & Risk Rules</p>
+                  {result.why_recommendation.rules_triggered.length === 0 ? (
+                    <p className="text-text-secondary">No active risk thresholds exceeded.</p>
+                  ) : (
+                    <ul className="space-y-1 list-disc pl-4 text-text-secondary">
+                      {result.why_recommendation.rules_triggered.map((rule, i) => (
+                        <li key={i}><strong className="text-text-primary">{rule}</strong></li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 p-3 rounded bg-muted/40 border border-border text-xs">
+                <p className="font-semibold text-text-primary">3. Final Derived Recommendation</p>
+                <p className="mt-1 text-text-secondary">{result.why_recommendation.final_recommendation}</p>
+              </div>
+            </Card>
+          )}
+
+          {/* COLLAPSIBLE: RULE TRACE */}
+          {showRuleTrace && result.rule_trace && (
+            <Card className="border-border bg-surface">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <h3 className="font-semibold text-text-primary text-sm">Deterministic Rule Trace</h3>
+                </div>
+                <span className="text-xs text-text-secondary">Zero Hidden Heuristics</span>
+              </div>
+
+              <div className="space-y-3">
+                {result.rule_trace.map((rule, idx) => (
+                  <div key={rule.condition_id} className="p-3 rounded bg-muted/40 border border-border text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] text-text-secondary font-bold">Step {idx + 1}:</span>
+                        <strong className="text-text-primary">{rule.condition_name}</strong>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                          rule.status_label === 'TRIGGERED'
+                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            : rule.status_label === 'TRUE'
+                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                            : 'bg-muted text-text-secondary border border-border'
+                        }`}
+                      >
+                        {rule.status_label}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-text-secondary mt-1">{rule.condition_text}</p>
+                    <p className="text-[11px] text-text-primary mt-1 font-medium bg-surface/60 p-1.5 rounded border border-border/40">
+                      {rule.impact_explanation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* COLLAPSIBLE: EVIDENCE & CONFIDENCE SECTION */}
+          {showEvidence && result.evidence_meta && (
+            <Card className="border-border bg-surface">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  <h3 className="font-semibold text-text-primary text-sm">Simulation Evidence & Confidence Audit</h3>
+                </div>
+                <span className="text-xs font-semibold text-emerald-500">{result.evidence_meta.confidence_pct}% Reliability Score</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 rounded bg-muted/40 border border-border">
+                  <p className="text-[10px] text-text-secondary uppercase">Historical Records</p>
+                  <p className="text-base font-bold text-text-primary mt-1">{result.evidence_meta.records_used}</p>
+                  <span className="text-[10px] text-text-secondary">Range: {result.evidence_meta.historical_range}</span>
+                </div>
+
+                <div className="p-3 rounded bg-muted/40 border border-border">
+                  <p className="text-[10px] text-text-secondary uppercase">Features Evaluated</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {result.evidence_meta.features_used.map((f) => (
+                      <span key={f} className="px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] text-emerald-500 font-medium">
+                        ✓ {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded bg-muted/40 border border-border">
+                  <p className="text-[10px] text-text-secondary uppercase">Features Missing / Partial</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {result.evidence_meta.insufficient_features.length === 0 ? (
+                      <span className="text-[11px] text-text-secondary">None (Full Coverage)</span>
+                    ) : (
+                      result.evidence_meta.insufficient_features.map((f) => (
+                        <span key={f} className="px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] text-amber-500 font-medium">
+                          ⚠ {f}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded bg-muted/40 border border-border">
+                  <p className="text-[10px] text-text-secondary uppercase">Modeling Methodology</p>
+                  <p className="text-[11px] text-text-primary font-medium mt-1 leading-snug">{result.evidence_meta.method}</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-secondary mt-3 pt-3 border-t border-border">{result.evidence_meta.note}</p>
+            </Card>
+          )}
+
+          {/* Traceability & Compliance Footer Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <h3 className="font-semibold text-text-primary text-sm">Regulatory & Traceability Notes</h3>
+              <p className="text-xs text-text-secondary mt-1">Audit verification details for AI risk management.</p>
+              <div className="mt-3 space-y-2 text-xs">
+                <div className="flex gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-text-secondary">
+                    All simulation metrics are derived deterministically from authenticated PostgreSQL records without synthetic extrapolation.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-text-secondary">
+                    Multi-user isolation is enforced at the database query level via session tokens.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <h3 className="font-semibold text-text-primary text-sm">Evidence Integrity Disclaimer</h3>
+              <p className="text-xs text-text-secondary mt-1">Simulation engine operational parameters.</p>
+              <p className="text-xs text-text-secondary mt-3 leading-relaxed">
+                {result.note} Scenarios illustrate conditional sensitivity outcomes rather than binding guarantees. Always verify financial and academic decisions with qualified human advisors.
+              </p>
+            </Card>
           </div>
         </>
       )}
