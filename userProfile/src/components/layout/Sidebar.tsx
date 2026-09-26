@@ -14,6 +14,7 @@ import {
   Zap,
   TrendingUp,
   Orbit,
+  Bot,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/productivity', label: 'Productivity & Behavior', icon: Zap },
     { to: '/forecasting', label: 'Predictive Forecasting', icon: TrendingUp },
     { to: '/simulation', label: 'Future Simulation', icon: Orbit },
+    { to: '/ai-assistant', label: 'AI Assistant', icon: Bot },
   ];
 
   const dataItems = [

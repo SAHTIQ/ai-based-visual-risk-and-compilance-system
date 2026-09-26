@@ -8,6 +8,8 @@ from app.models.activity import ActivityHistory
 from app.models.settings import UserSettings
 from app.models.work_session import WorkSession
 from app.models.simulation import SimulationHistory
+from app.models.chat import Conversation, ChatMessage
+from app.models.risk import RiskDetection
 
 __all__ = [
     "Base",
@@ -20,4 +22,7 @@ __all__ = [
     "UserSettings",
     "WorkSession",
     "SimulationHistory",
+    "Conversation",
+    "ChatMessage",
+    "RiskDetection",
 ]

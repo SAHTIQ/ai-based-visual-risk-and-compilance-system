@@ -25,3 +25,5 @@ class User(Base):
     settings: Mapped["UserSettings"] = relationship("UserSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     work_sessions: Mapped[list["WorkSession"]] = relationship("WorkSession", back_populates="user", cascade="all, delete-orphan")
     simulation_history: Mapped[list["SimulationHistory"]] = relationship("SimulationHistory", back_populates="user", cascade="all, delete-orphan")
+    conversations: Mapped[list["Conversation"]] = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    risk_detections: Mapped[list["RiskDetection"]] = relationship("RiskDetection", back_populates="user", cascade="all, delete-orphan")

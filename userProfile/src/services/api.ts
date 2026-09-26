@@ -527,6 +527,74 @@ export const api = {
     });
   },
 
+  // ================= Milestone 4: Risk & Compliance Intelligence =================
+  async getRiskOverview(): Promise<import('../types').RiskOverview> {
+    return fetchApi<import('../types').RiskOverview>('/risk/overview');
+  },
+
+  async getRiskTrends(days: number = 30): Promise<import('../types').RiskTrendPoint[]> {
+    return fetchApi<import('../types').RiskTrendPoint[]>(`/risk/trends?days=${days}`);
+  },
+
+  async getRiskDetections(params?: {
+    status?: string;
+    risk_level?: string;
+    only_violations?: boolean;
+    limit?: number;
+  }): Promise<import('../types').RiskDetection[]> {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.risk_level) query.append('risk_level', params.risk_level);
+    if (params?.only_violations !== undefined) query.append('only_violations', String(params.only_violations));
+    if (params?.limit) query.append('limit', String(params.limit));
+    const qs = query.toString();
+    return fetchApi<import('../types').RiskDetection[]>(`/risk/detections${qs ? `?${qs}` : ''}`);
+  },
+
+  async getRiskDetectionDetail(id: number): Promise<import('../types').RiskDetection> {
+    return fetchApi<import('../types').RiskDetection>(`/risk/detections/${id}`);
+  },
+
+  // ================= Milestone 4: AI Assistant & Persistent Chat =================
+  async getConversations(): Promise<import('../types').Conversation[]> {
+    return fetchApi<import('../types').Conversation[]>('/chat/conversations');
+  },
+
+  async createConversation(title?: string): Promise<import('../types').Conversation> {
+    return fetchApi<import('../types').Conversation>('/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title: title || 'New Investigation' }),
+    });
+  },
+
+  async getConversationDetail(conversationId: number): Promise<import('../types').ConversationDetail> {
+    return fetchApi<import('../types').ConversationDetail>(`/chat/conversations/${conversationId}`);
+  },
+
+  async deleteConversation(conversationId: number): Promise<void> {
+    await fetchApi(`/chat/conversations/${conversationId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async sendChatMessage(conversationId: number, content: string): Promise<import('../types').ChatResponse> {
+    return fetchApi<import('../types').ChatResponse>(`/chat/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  },
+
+  async quickAskAI(content: string): Promise<import('../types').ChatResponse> {
+    return fetchApi<import('../types').ChatResponse>('/chat/quick-ask', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  },
+
+  async getAIReadiness(): Promise<any> {
+    return fetchApi<any>('/chat/readiness');
+  },
+
 
 
   // ================= Dashboard Summary =================

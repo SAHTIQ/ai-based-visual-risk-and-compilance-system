@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     SESSION_SECRET_KEY: str = "secret-key-change-in-production-ai-risk-compliance-2026"
     SESSION_COOKIE_NAME: str = "user_profiling_session"
     DEV_AUTO_LOGIN: bool = True
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_BASE_URL: str | None = None
+    OPENAI_TIMEOUT_SECONDS: float = 30.0
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),

@@ -409,3 +409,90 @@ export interface SimulationHistoryItem {
   why_recommendation?: WhyRecommendationDetail | null;
 }
 
+// ================= Milestone 4 Extensions =================
+
+export interface RiskOverview {
+  current_risk_status: string;
+  risk_level_code: 'low' | 'medium' | 'high' | 'elevated';
+  recent_violations: number;
+  violations_delta_pct?: number | null;
+  total_detections: number;
+  detections_delta_pct?: number | null;
+  compliance_status: string;
+  compliance_rate_pct: number;
+  active_hazards_count: number;
+  last_inspection_date?: string | null;
+}
+
+export interface RiskTrendPoint {
+  date: string;
+  risk_score: number;
+  violations_count: number;
+  detections_count: number;
+  label: string;
+}
+
+export interface RiskDetection {
+  id: number;
+  detected_object: string;
+  risk_level: 'High' | 'Medium' | 'Low';
+  confidence: number;
+  confidence_pct: number;
+  rule_code: string;
+  rule_description: string;
+  evidence_summary: string;
+  image_path?: string | null;
+  status: 'active' | 'mitigated' | 'investigating' | 'cleared';
+  is_violation: boolean;
+  detected_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  conversation_id: number;
+  sender: 'user' | 'assistant';
+  content: string;
+  metadata_json?: string | null;
+  created_at: string;
+}
+
+export interface Conversation {
+  id: number;
+  user_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message?: string | null;
+}
+
+export interface ConversationDetail {
+  id: number;
+  user_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  messages: ChatMessage[];
+}
+
+export interface ChatResponse {
+  conversation_id: number;
+  user_message: ChatMessage;
+  assistant_message: ChatMessage;
+  is_success: boolean;
+  is_configured: boolean;
+  error_message?: string | null;
+  readiness?: {
+    rag_retrieval?: {
+      is_operational: boolean;
+      status_label: string;
+      description: string;
+    };
+    web_research?: {
+      is_operational: boolean;
+      status_label: string;
+      description: string;
+    };
+  } | null;
+}
+

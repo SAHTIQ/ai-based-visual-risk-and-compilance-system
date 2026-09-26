@@ -10,6 +10,8 @@ from app.routers.behavior import router as behavior_router
 from app.routers.analytics import router as analytics_router
 from app.routers.forecast import router as forecast_router
 from app.routers.simulation import router as simulation_router
+from app.routers.chat import router as chat_router
+from app.routers.risk import router as risk_router
 
 __all__ = [
     "auth_router",
@@ -24,4 +26,6 @@ __all__ = [
     "analytics_router",
     "forecast_router",
     "simulation_router",
+    "chat_router",
+    "risk_router",
 ]
