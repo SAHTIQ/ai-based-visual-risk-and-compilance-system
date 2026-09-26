@@ -35,6 +35,7 @@ import type {
 } from '../types';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -827,7 +828,7 @@ export const Dashboard: React.FC = () => {
                             : 'bg-muted text-text-primary rounded-bl-none border border-border'
                         }`}
                       >
-                        <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                        <MarkdownRenderer content={msg.content} isUser={isUser} />
                         {!isUser && (
                           <div className="flex items-center justify-end gap-1 mt-1 pt-1 border-t border-border/60 text-[9px] text-text-secondary">
                             <button

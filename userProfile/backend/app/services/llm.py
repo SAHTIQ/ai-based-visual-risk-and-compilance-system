@@ -2,7 +2,15 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
-from openai import OpenAI, APIConnectionError, RateLimitError, APIStatusError, APITimeoutError
+
+from openai import (
+    OpenAI,
+    APIConnectionError,
+    RateLimitError,
+    APIStatusError,
+    APITimeoutError,
+)
+
 from app.config import settings
 
 logger = logging.getLogger("ai_assistant.llm")
@@ -16,7 +24,7 @@ class LLMResponse:
         model: str,
         is_success: bool = True,
         error_message: Optional[str] = None,
-        usage: Optional[Dict[str, int]] = None,
+        usage: Optional[Dict[str, Any]] = None,
         is_configured: bool = True,
     ):
         self.content = content
@@ -38,7 +46,7 @@ class LLMResponse:
 
 
 class BaseLLMProvider(ABC):
-    """Abstract interface to keep provider integration modular for future LLMs."""
+    """Abstract interface for modular LLM provider integration."""
 
     @abstractmethod
     def generate(
@@ -55,28 +63,40 @@ class BaseLLMProvider(ABC):
         pass
 
 
-class OpenAILLMService(BaseLLMProvider):
+class GeminiLLMService(BaseLLMProvider):
     """
-    Official OpenAI Python SDK provider implementation with timeout handling,
-    rate limit protection, logging, and unconfigured state handling.
+    Gemini provider using Google's OpenAI-compatible API endpoint.
+
+    Keeps the existing OpenAI SDK client interface while sending
+    requests to Google's Gemini API.
     """
 
     def __init__(self):
-        self.api_key = (settings.OPENAI_API_KEY or "").strip()
-        self.model = settings.OPENAI_MODEL or "gpt-4o-mini"
-        self.base_url = settings.OPENAI_BASE_URL
-        self.timeout = settings.OPENAI_TIMEOUT_SECONDS or 30.0
+        self.api_key = (settings.GEMINI_API_KEY or "").strip()
+        self.model = settings.GEMINI_MODEL or "gemini-3.8-flash"
+        self.base_url = (
+            settings.GEMINI_BASE_URL
+            or "https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        self.timeout = settings.GEMINI_TIMEOUT_SECONDS or 30.0
 
         self._client: Optional[OpenAI] = None
-        if self.api_key and not self.api_key.startswith("your-openai-api-key"):
+
+        if (
+            self.api_key
+            and not self.api_key.startswith("your-gemini-api-key")
+        ):
             try:
                 self._client = OpenAI(
                     api_key=self.api_key,
                     base_url=self.base_url,
                     timeout=self.timeout,
                 )
-            except Exception as e:
-                logger.error(f"Failed to initialize OpenAI client: {e}")
+
+                logger.info("Gemini client initialized successfully.")
+
+            except Exception:
+                logger.exception("Failed to initialize Gemini client.")
                 self._client = None
 
     def is_available(self) -> bool:
@@ -89,43 +109,90 @@ class OpenAILLMService(BaseLLMProvider):
         max_tokens: int = 1200,
         temperature: float = 0.3,
     ) -> LLMResponse:
+
         if not self.is_available():
-            logger.warning("OpenAI API key not configured or client initialization failed.")
+            logger.warning(
+                "Gemini API key is not configured or client initialization failed."
+            )
+
             return LLMResponse(
                 content=(
-                    "⚠️ **AI Service Notice**: OpenAI API key is not configured.\n\n"
-                    "To enable live OpenAI generation, set `OPENAI_API_KEY=your_key` in `backend/.env` and restart the backend server.\n\n"
-                    "The backend data grounding, conversation memory, and risk analytics pipelines are fully operational."
+                    "AI Service Notice: Gemini API key is not configured.\n\n"
+                    "Set GEMINI_API_KEY in your backend .env file "
+                    "and restart the backend server."
                 ),
                 model=self.model,
                 is_success=False,
                 is_configured=False,
-                error_message="OPENAI_API_KEY not configured in backend/.env",
+                error_message="GEMINI_API_KEY is not configured.",
             )
 
         full_messages = []
+
         if system_prompt:
-            full_messages.append({"role": "system", "content": system_prompt})
+            full_messages.append(
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                }
+            )
+
         for msg in messages:
-            full_messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            if role not in ("system", "user", "assistant"):
+                logger.warning("Skipping unsupported message role: %s", role)
+                continue
+
+            full_messages.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
 
         start_time = time.time()
+
         try:
-            logger.info(f"Calling OpenAI model '{self.model}' with {len(full_messages)} messages...")
+            logger.info(
+                "Calling Gemini model '%s' with %s messages...",
+                self.model,
+                len(full_messages),
+            )
+
             response = self._client.chat.completions.create(
                 model=self.model,
                 messages=full_messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
+
             elapsed = round(time.time() - start_time, 2)
-            logger.info(f"OpenAI completion succeeded in {elapsed}s.")
+
+            logger.info(
+                "Gemini completion succeeded in %s seconds.",
+                elapsed,
+            )
 
             choice = response.choices[0]
+
             usage_dict = {
-                "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                "completion_tokens": response.usage.completion_tokens if response.usage else 0,
-                "total_tokens": response.usage.total_tokens if response.usage else 0,
+                "prompt_tokens": (
+                    response.usage.prompt_tokens
+                    if response.usage
+                    else 0
+                ),
+                "completion_tokens": (
+                    response.usage.completion_tokens
+                    if response.usage
+                    else 0
+                ),
+                "total_tokens": (
+                    response.usage.total_tokens
+                    if response.usage
+                    else 0
+                ),
                 "elapsed_seconds": elapsed,
             }
 
@@ -138,45 +205,73 @@ class OpenAILLMService(BaseLLMProvider):
             )
 
         except RateLimitError as e:
-            logger.error(f"OpenAI Rate limit exceeded: {e}")
+            logger.error("Gemini rate limit or quota error: %s", e)
+
             return LLMResponse(
-                content="Rate limit reached with the OpenAI service. Please wait a moment before asking another question.",
+                content=(
+                    "The Gemini API rate limit or quota was reached. "
+                    "Check your Gemini API usage and try again later."
+                ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
-                error_message=f"Rate limit exceeded: {str(e)}",
+                error_message=f"Gemini rate limit or quota error: {str(e)}",
             )
+
         except APITimeoutError as e:
-            logger.error(f"OpenAI API request timed out: {e}")
+            logger.error("Gemini API request timed out: %s", e)
+
             return LLMResponse(
-                content="The request to OpenAI timed out. Please try again with a shorter query.",
+                content=(
+                    "The request to Gemini timed out. "
+                    "Please try again with a shorter query."
+                ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
                 error_message=f"Timeout: {str(e)}",
             )
+
         except APIConnectionError as e:
-            logger.error(f"Could not connect to OpenAI API: {e}")
+            logger.error("Could not connect to Gemini API: %s", e)
+
             return LLMResponse(
-                content="Could not connect to the OpenAI API endpoint. Please check network connectivity.",
+                content=(
+                    "Could not connect to the Gemini API. "
+                    "Please check your network connection."
+                ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
                 error_message=f"Connection error: {str(e)}",
             )
+
         except APIStatusError as e:
-            logger.error(f"OpenAI API returned status {e.status_code}: {e.message}")
+            logger.error(
+                "Gemini API returned status %s: %s",
+                e.status_code,
+                e.message,
+            )
+
             return LLMResponse(
-                content=f"OpenAI API error ({e.status_code}): {e.message}",
+                content=(
+                    f"Gemini API error ({e.status_code}). "
+                    "Check the backend logs for details."
+                ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
                 error_message=f"Status {e.status_code}: {e.message}",
             )
+
         except Exception as e:
-            logger.error(f"Unexpected error in LLM service: {e}", exc_info=True)
+            logger.exception("Unexpected error in Gemini LLM service.")
+
             return LLMResponse(
-                content=f"An unexpected error occurred while communicating with the AI service: {str(e)}",
+                content=(
+                    "An unexpected error occurred while "
+                    "communicating with the Gemini service."
+                ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
@@ -184,6 +279,6 @@ class OpenAILLMService(BaseLLMProvider):
             )
 
 
-# Default factory function to get the configured provider
 def get_llm_service() -> BaseLLMProvider:
-    return OpenAILLMService()
+    """Return the configured Gemini provider."""
+    return GeminiLLMService()

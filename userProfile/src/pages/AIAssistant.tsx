@@ -17,6 +17,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { api } from '../services/api';
 import type { Conversation, ConversationDetail, ChatMessage } from '../types';
 import { useApp } from '../context/AppContext';
+import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
 export const AIAssistant: React.FC = () => {
   const { showToast } = useApp();
@@ -372,7 +373,7 @@ export const AIAssistant: React.FC = () => {
                           : 'bg-muted text-text-primary rounded-bl-none border border-border'
                       }`}
                     >
-                      <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                      <MarkdownRenderer content={msg.content} isUser={isUser} />
 
                       <div
                         className={`flex items-center justify-between gap-3 mt-1.5 pt-1 text-[10px] ${

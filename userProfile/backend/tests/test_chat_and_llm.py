@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from app.database import SessionLocal
 from app.models.user import User
 from app.models.chat import Conversation, ChatMessage
-from app.services.llm import OpenAILLMService, get_llm_service
+from app.services.llm import get_llm_service
 from app.services.app_context import get_user_risk_context, build_system_prompt
 from app.services.rag import rag_service
 
@@ -64,7 +64,7 @@ class ChatAndLLMTests(unittest.TestCase):
 
     def test_llm_service_unconfigured_handling(self):
         """Verify LLM service gracefully reports setup notice when key is unconfigured without crashing."""
-        llm = OpenAILLMService()
+        llm = get_llm_service()
         resp = llm.generate(
             messages=[{"role": "user", "content": "Hello"}],
             system_prompt="Test system prompt",
