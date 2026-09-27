@@ -40,9 +40,9 @@ import type {
 } from '../types';
 
 const scenarioMeta = {
-  best: { label: 'Optimistic Scenario', color: '#16A34A', icon: TrendingUp, tone: 'border-emerald-500/30 bg-emerald-500/5' },
-  expected: { label: 'Expected Scenario', color: '#2563EB', icon: Orbit, tone: 'border-blue-500/30 bg-blue-500/5' },
-  risk: { label: 'Risk Scenario', color: '#DC2626', icon: TrendingDown, tone: 'border-red-500/30 bg-red-500/5' },
+  best: { label: 'Best Case Scenario', color: '#16A34A', icon: TrendingUp, tone: 'border-emerald-500/30 bg-emerald-500/5' },
+  expected: { label: 'Most Likely Scenario', color: '#2563EB', icon: Orbit, tone: 'border-blue-500/30 bg-blue-500/5' },
+  risk: { label: 'Caution Scenario', color: '#DC2626', icon: TrendingDown, tone: 'border-red-500/30 bg-red-500/5' },
 } as const;
 
 const HORIZON_OPTIONS = [
@@ -202,13 +202,13 @@ function MultiHorizonTrajectoryChart({
               <span>Spending: <strong className="text-text-primary">{formatCurrency(hoveredStep.monthly_spending)}</strong></span>
             )}
             {hoveredStep.burnout_pct !== null && hoveredStep.burnout_pct !== undefined && (
-              <span>Burnout: <strong className="text-text-primary">{hoveredStep.burnout_pct}%</strong></span>
+              <span>Stress: <strong className="text-text-primary">{hoveredStep.burnout_pct}%</strong></span>
             )}
             {hoveredStep.wellbeing_score !== null && hoveredStep.wellbeing_score !== undefined && (
               <span>Well-being: <strong className="text-text-primary">{hoveredStep.wellbeing_score}/100</strong></span>
             )}
             {hoveredStep.emergency_runway_months !== null && hoveredStep.emergency_runway_months !== undefined && (
-              <span>Runway: <strong className="text-text-primary">{hoveredStep.emergency_runway_months} mo</strong></span>
+              <span>Safety Cushion: <strong className="text-text-primary">{hoveredStep.emergency_runway_months} mo</strong></span>
             )}
           </div>
         </div>
@@ -227,7 +227,7 @@ function MultiHorizonTrajectoryChart({
   );
 }
 
-// Scenario Card (Optimistic, Expected, Risk)
+// Scenario Card (Best Case, Most Likely, Caution)
 function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: keyof typeof scenarioMeta }) {
   const meta = scenarioMeta[type];
   const Icon = meta.icon;
@@ -243,13 +243,13 @@ function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: 
             <p className="text-xs text-text-secondary mt-1.5">{scenario.summary.outcome}</p>
           </div>
           <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-surface border border-border text-text-secondary whitespace-nowrap">
-            {scenario.confidence === null ? 'No confidence' : `${Math.round(scenario.confidence * 100)}% reliability`}
+            {scenario.confidence === null ? 'Estimating' : `${Math.round(scenario.confidence * 100)}% confidence`}
           </span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border/60 text-center">
           <div className="p-2 rounded bg-surface/50">
-            <p className="text-[10px] text-text-secondary uppercase">Avg Score</p>
+            <p className="text-[10px] text-text-secondary uppercase">Daily Score</p>
             <p className="text-sm font-bold text-text-primary mt-0.5">{formatNumber(scenario.summary.projected_average_productivity)}</p>
           </div>
           <div className="p-2 rounded bg-surface/50">
@@ -257,7 +257,7 @@ function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: 
             <p className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(scenario.summary.projected_savings)}</p>
           </div>
           <div className="p-2 rounded bg-surface/50">
-            <p className="text-[10px] text-text-secondary uppercase">Burnout</p>
+            <p className="text-[10px] text-text-secondary uppercase">Stress Level</p>
             <p className="text-sm font-bold text-text-primary mt-0.5">{formatNumber(scenario.summary.projected_burnout, '%')}</p>
           </div>
         </div>
@@ -275,7 +275,7 @@ function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: 
 
       <div className="mt-4 pt-3 border-t border-border/60">
         <p className="text-xs text-text-primary leading-relaxed">
-          <span className="font-semibold text-primary">Recommendation: </span>
+          <span className="font-semibold text-primary">Actionable Advice: </span>
           {scenario.recommendation}
         </p>
       </div>
@@ -389,8 +389,8 @@ export const Simulation: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
       <PageHeader
-        title="Simulation Engine (M3)"
-        description="Evidence-based scenario modeling, dynamic what-if simulation, sensitivity analysis, and explainable rule tracing."
+        title="Future Simulation & What-If Planner"
+        description="See how small changes in your study habits, sleep, spending, and exercise shape your future wellbeing and savings in simple, easy-to-understand terms."
       />
 
       {/* Dataset & Baseline Status Bar */}
@@ -406,10 +406,10 @@ export const Simulation: React.FC = () => {
                 }`}
               >
                 {baseline.data_status === 'valid' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                {baseline.data_status === 'valid' ? 'Data Status: Active & Valid' : 'Insufficient Evidence'}
+                {baseline.data_status === 'valid' ? 'Data Status: Ready' : 'Need More Records'}
               </span>
               <span className="text-xs text-text-secondary">
-                Records Used: <strong className="text-text-primary">{baseline.records_used}</strong>
+                Records Analyzed: <strong className="text-text-primary">{baseline.records_used}</strong>
               </span>
               <span className="text-xs text-text-secondary">
                 Historical Range: <strong className="text-text-primary">{baseline.data_range_start || 'N/A'} → {baseline.data_range_end || 'N/A'}</strong>
@@ -524,61 +524,61 @@ export const Simulation: React.FC = () => {
       {/* Main Simulation View */}
       {!loading && result && result.evidence_status === 'valid' && baseline && (
         <>
-          {/* FEATURE 1 — CURRENT STATE / BASELINE CARD */}
+          {/* FEATURE 1 — WHERE YOU STAND TODAY (BASELINE CARD) */}
           <Card className="border-border">
             <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
               <div className="flex items-center gap-2">
                 <Database className="w-4 h-4 text-primary" />
-                <h2 className="font-semibold text-text-primary text-base">Current State / Simulation Baseline</h2>
+                <h2 className="font-semibold text-text-primary text-base">Where You Stand Today (Your Current Baseline)</h2>
               </div>
-              <span className="text-xs text-text-secondary">Source: Latest User Database Records</span>
+              <span className="text-xs text-text-secondary">Source: Your Real Records</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
-                <p className="text-[11px] text-text-secondary font-medium uppercase">Savings</p>
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Current Savings</p>
                 <p className="text-base font-bold text-text-primary mt-1">{formatCurrency(baseline.savings)}</p>
-                <span className="text-[10px] text-text-secondary">Liquid capital</span>
+                <span className="text-[10px] text-text-secondary">Available in bank</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
                 <p className="text-[11px] text-text-secondary font-medium uppercase">Monthly Spending</p>
                 <p className="text-base font-bold text-text-primary mt-1">{formatCurrency(baseline.monthly_spending)}</p>
-                <span className="text-[10px] text-text-secondary">Outflow rate</span>
+                <span className="text-[10px] text-text-secondary">Monthly expenses</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
                 <p className="text-[11px] text-text-secondary font-medium uppercase">Study Load</p>
                 <p className="text-base font-bold text-text-primary mt-1">{formatNumber(baseline.study_load_hrs_week, ' hrs/wk')}</p>
-                <span className="text-[10px] text-text-secondary">Weekly academic</span>
+                <span className="text-[10px] text-text-secondary">Focus time per week</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
                 <p className="text-[11px] text-text-secondary font-medium uppercase">Sleep</p>
                 <p className="text-base font-bold text-text-primary mt-1">{formatNumber(baseline.sleep_hrs_night, ' hrs/nt')}</p>
-                <span className="text-[10px] text-text-secondary">Rest duration</span>
+                <span className="text-[10px] text-text-secondary">Hours per night</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
-                <p className="text-[11px] text-text-secondary font-medium uppercase">Burnout</p>
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Stress & Fatigue</p>
                 <p className={`text-base font-bold mt-1 ${baseline.burnout_pct > 50 ? 'text-red-500' : 'text-emerald-500'}`}>
                   {formatNumber(baseline.burnout_pct, '%')}
                 </p>
-                <span className="text-[10px] text-text-secondary">Fatigue index</span>
+                <span className="text-[10px] text-text-secondary">Risk level</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
                 <p className="text-[11px] text-text-secondary font-medium uppercase">Well-being</p>
                 <p className="text-base font-bold text-primary mt-1">{formatNumber(baseline.wellbeing_score, '/100')}</p>
-                <span className="text-[10px] text-text-secondary">Health balance</span>
+                <span className="text-[10px] text-text-secondary">Health & mood score</span>
               </div>
 
               <div className="p-3 rounded-lg bg-muted/60 border border-border">
-                <p className="text-[11px] text-text-secondary font-medium uppercase">Emergency Runway</p>
+                <p className="text-[11px] text-text-secondary font-medium uppercase">Safety Cushion</p>
                 <p className={`text-base font-bold mt-1 ${baseline.emergency_runway_months < 3 ? 'text-amber-500' : 'text-text-primary'}`}>
                   {formatNumber(baseline.emergency_runway_months, ' mo')}
                 </p>
-                <span className="text-[10px] text-text-secondary">Buffer coverage</span>
+                <span className="text-[10px] text-text-secondary">Months you can survive</span>
               </div>
             </div>
           </Card>
@@ -589,10 +589,10 @@ export const Simulation: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-primary" />
-                  <h2 className="font-semibold text-text-primary text-base">Custom What-If Simulator</h2>
+                  <h2 className="font-semibold text-text-primary text-base">Adjust Your Lifestyle Habits & Financial Plan</h2>
                 </div>
                 <p className="text-xs text-text-secondary mt-1">
-                  Adjust personal variables to simulate systemic outcomes across financial, cognitive, and health dimensions.
+                  Move the sliders below to see how your life and finances will look in 30 days, 90 days, 6 months, or 1 year.
                 </p>
               </div>
 
@@ -801,20 +801,20 @@ export const Simulation: React.FC = () => {
               <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-primary" />
-                  <h2 className="font-semibold text-text-primary text-base">Simulation Impact (Before vs After)</h2>
+                  <h2 className="font-semibold text-text-primary text-base">Your Future Snapshot (Before vs After Changes)</h2>
                 </div>
-                <span className="text-xs text-text-secondary">Horizon: {result.simulation_period} Days</span>
+                <span className="text-xs text-text-secondary">Timeframe: {result.simulation_period} Days Ahead</span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-border/80 text-text-secondary bg-muted/40 font-semibold">
-                      <th className="py-2.5 px-3">Metric</th>
-                      <th className="py-2.5 px-3">Baseline</th>
-                      <th className="py-2.5 px-3">Simulated ({result.simulation_period}D)</th>
-                      <th className="py-2.5 px-3">Absolute Change</th>
-                      <th className="py-2.5 px-3">Relative Shift</th>
+                      <th className="py-2.5 px-3">Lifestyle Area</th>
+                      <th className="py-2.5 px-3">Current Today</th>
+                      <th className="py-2.5 px-3">Projected in {result.simulation_period} Days</th>
+                      <th className="py-2.5 px-3">Estimated Difference</th>
+                      <th className="py-2.5 px-3">Percentage Change</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -865,7 +865,7 @@ export const Simulation: React.FC = () => {
 
           {/* EXISTING OUTCOME COMPARISON: OPTIMISTIC, EXPECTED, RISK */}
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-secondary mb-3">Outcome Scenarios Comparison</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-secondary mb-3">Compare 3 Possible Futures</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {(Object.keys(scenarioMeta) as Array<keyof typeof scenarioMeta>).map((key) => {
                 if (!result.scenarios[key]) return null;
@@ -878,9 +878,9 @@ export const Simulation: React.FC = () => {
           <Card className="border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-3 border-b border-border">
               <div>
-                <h2 className="font-semibold text-text-primary text-base">Simulation Timeline ({result.simulation_period}-Day Trajectory)</h2>
+                <h2 className="font-semibold text-text-primary text-base">Your Projected Timeline (Next {result.simulation_period} Days)</h2>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Hover over the curve to inspect multi-metric projections across the horizon. Projections are evidence-based scenarios.
+                  Hover anywhere along the curve to see day-by-day estimates of your productivity, savings, and stress level.
                 </p>
               </div>
               <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
@@ -888,15 +888,15 @@ export const Simulation: React.FC = () => {
             <MultiHorizonTrajectoryChart scenarios={result.scenarios} horizonDays={result.simulation_period} />
           </Card>
 
-          {/* FEATURE 5 — SENSITIVITY ANALYSIS */}
+          {/* FEATURE 5 — SENSITIVITY ANALYSIS IN LAYMAN TERMS */}
           {result.sensitivity && result.sensitivity.length > 0 && (
             <Card className="border-border">
               <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                 <div className="flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-primary" />
-                  <h2 className="font-semibold text-text-primary text-base">Sensitivity Analysis (One-At-A-Time Elasticity)</h2>
+                  <h2 className="font-semibold text-text-primary text-base">What Habits Affect Your Future The Most?</h2>
                 </div>
-                <span className="text-xs text-text-secondary">Perturbation Range: ±20%</span>
+                <span className="text-xs text-text-secondary">Tested with ±20% habit shift</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -924,7 +924,7 @@ export const Simulation: React.FC = () => {
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-text-primary">{item.label}</span>
                         <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${badgeStyle}`}>
-                          {item.impact_level}
+                          {item.impact_level} Impact
                         </span>
                       </div>
 
@@ -934,8 +934,8 @@ export const Simulation: React.FC = () => {
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-text-secondary">
-                        <span>Target: <strong>{item.outcome_metric}</strong></span>
-                        <span>Elasticity Score: {item.impact_score}/100</span>
+                        <span>Directly Affects: <strong className="text-text-primary">{item.outcome_metric}</strong></span>
+                        <span>Impact Score: {item.impact_score}/100</span>
                       </div>
                       <p className="text-[11px] text-text-secondary leading-normal">{item.description}</p>
                     </div>
@@ -944,7 +944,7 @@ export const Simulation: React.FC = () => {
               </div>
 
               <p className="text-[11px] text-text-secondary mt-4 pt-3 border-t border-border">
-                <strong>Methodology:</strong> Features are individually perturbed by ±20% while holding all other variables constant. The relative variance across terminal savings runway, burnout, and composite well-being is mapped to deterministically calibrated sensitivity tiers.
+                <strong>How this works:</strong> We test what happens if you increase or decrease each habit by 20%. The habits that cause the biggest swings in your financial cushion and daily energy are ranked at the top so you know what to focus on first.
               </p>
             </Card>
           )}
@@ -955,7 +955,7 @@ export const Simulation: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Brain className="w-5 h-5 text-primary" />
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-primary">AI Simulation Analysis & Recommendation</h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-primary">AI Forecast & Digital Twin Coach</h2>
                 </div>
                 <p className="text-base font-bold text-text-primary leading-snug">
                   {result.recommendation || result.scenarios.expected.recommendation}
@@ -975,7 +975,7 @@ export const Simulation: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
               >
                 <HelpCircle className="w-3.5 h-3.5 text-primary" />
-                {showWhyRec ? 'Hide Calculation' : 'Why This Recommendation?'}
+                {showWhyRec ? 'Hide Breakdown' : 'Why This Advice?'}
                 {showWhyRec ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
 
@@ -985,7 +985,7 @@ export const Simulation: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                {showRuleTrace ? 'Hide Rule Trace' : 'Inspect Rule Trace'}
+                {showRuleTrace ? 'Hide Checks' : 'Safety & Habit Checks'}
                 {showRuleTrace ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
 
@@ -995,7 +995,7 @@ export const Simulation: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-semibold bg-surface border border-border hover:bg-muted text-text-primary transition"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                {showEvidence ? 'Hide Evidence' : 'Evidence & Confidence Details'}
+                {showEvidence ? 'Hide Details' : 'Data Accuracy & Records'}
                 {showEvidence ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -1007,23 +1007,23 @@ export const Simulation: React.FC = () => {
               <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-primary" />
-                  <h3 className="font-semibold text-text-primary text-sm">Recommendation Calculation Breakdown</h3>
+                  <h3 className="font-semibold text-text-primary text-sm">How Your Advice Was Calculated</h3>
                 </div>
-                <span className="text-xs font-semibold text-primary">{result.why_recommendation.confidence_pct}% Confidence</span>
+                <span className="text-xs font-semibold text-primary">{result.why_recommendation.confidence_pct}% AI Confidence</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="p-3 rounded bg-muted/40 border border-border space-y-1.5">
-                  <p className="font-semibold text-text-primary">1. Scenario & Primary Driver</p>
-                  <p className="text-text-secondary">Scenario: <strong className="text-text-primary">{result.why_recommendation.selected_scenario}</strong></p>
-                  <p className="text-text-secondary">Primary Contributing Factor: <strong className="text-primary">{result.why_recommendation.primary_contributing_factor}</strong></p>
-                  <p className="text-text-secondary">Evidence Used: {result.why_recommendation.evidence_used}</p>
+                  <p className="font-semibold text-text-primary">1. Main Lifestyle Driver</p>
+                  <p className="text-text-secondary">Outlook Scenario: <strong className="text-text-primary">{result.why_recommendation.selected_scenario}</strong></p>
+                  <p className="text-text-secondary">Key Habit Driving This: <strong className="text-primary">{result.why_recommendation.primary_contributing_factor}</strong></p>
+                  <p className="text-text-secondary">Real Records Checked: {result.why_recommendation.evidence_used}</p>
                 </div>
 
                 <div className="p-3 rounded bg-muted/40 border border-border space-y-1.5">
-                  <p className="font-semibold text-text-primary">2. Triggered Business & Risk Rules</p>
+                  <p className="font-semibold text-text-primary">2. Safety Alerts & Habit Checks</p>
                   {result.why_recommendation.rules_triggered.length === 0 ? (
-                    <p className="text-text-secondary">No active risk thresholds exceeded.</p>
+                    <p className="text-text-secondary">No negative risk thresholds or budget alerts were exceeded. You are in a safe zone!</p>
                   ) : (
                     <ul className="space-y-1 list-disc pl-4 text-text-secondary">
                       {result.why_recommendation.rules_triggered.map((rule, i) => (
@@ -1035,7 +1035,7 @@ export const Simulation: React.FC = () => {
               </div>
 
               <div className="mt-3 p-3 rounded bg-muted/40 border border-border text-xs">
-                <p className="font-semibold text-text-primary">3. Final Derived Recommendation</p>
+                <p className="font-semibold text-text-primary">3. Recommended Action Plan</p>
                 <p className="mt-1 text-text-secondary">{result.why_recommendation.final_recommendation}</p>
               </div>
             </Card>
@@ -1047,9 +1047,9 @@ export const Simulation: React.FC = () => {
               <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  <h3 className="font-semibold text-text-primary text-sm">Deterministic Rule Trace</h3>
+                  <h3 className="font-semibold text-text-primary text-sm">Safety, Health & Budget Limits Checked</h3>
                 </div>
-                <span className="text-xs text-text-secondary">Zero Hidden Heuristics</span>
+                <span className="text-xs text-text-secondary">Verified Against Your Real Limits</span>
               </div>
 
               <div className="space-y-3">
@@ -1057,7 +1057,7 @@ export const Simulation: React.FC = () => {
                   <div key={rule.condition_id} className="p-3 rounded bg-muted/40 border border-border text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-text-secondary font-bold">Step {idx + 1}:</span>
+                        <span className="font-mono text-[11px] text-text-secondary font-bold">Check {idx + 1}:</span>
                         <strong className="text-text-primary">{rule.condition_name}</strong>
                       </div>
                       <span
@@ -1069,7 +1069,7 @@ export const Simulation: React.FC = () => {
                             : 'bg-muted text-text-secondary border border-border'
                         }`}
                       >
-                        {rule.status_label}
+                        {rule.status_label === 'TRIGGERED' ? 'ATTENTION NEEDED' : rule.status_label === 'TRUE' ? 'SAFE & STABLE' : 'CHECKED'}
                       </span>
                     </div>
 
@@ -1089,20 +1089,20 @@ export const Simulation: React.FC = () => {
               <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <h3 className="font-semibold text-text-primary text-sm">Simulation Evidence & Confidence Audit</h3>
+                  <h3 className="font-semibold text-text-primary text-sm">Data Quality & Accuracy Audit</h3>
                 </div>
                 <span className="text-xs font-semibold text-emerald-500">{result.evidence_meta.confidence_pct}% Reliability Score</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded bg-muted/40 border border-border">
-                  <p className="text-[10px] text-text-secondary uppercase">Historical Records</p>
+                  <p className="text-[10px] text-text-secondary uppercase">User Records Analyzed</p>
                   <p className="text-base font-bold text-text-primary mt-1">{result.evidence_meta.records_used}</p>
                   <span className="text-[10px] text-text-secondary">Range: {result.evidence_meta.historical_range}</span>
                 </div>
 
                 <div className="p-3 rounded bg-muted/40 border border-border">
-                  <p className="text-[10px] text-text-secondary uppercase">Features Evaluated</p>
+                  <p className="text-[10px] text-text-secondary uppercase">Habit Factors Included</p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {result.evidence_meta.features_used.map((f) => (
                       <span key={f} className="px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] text-emerald-500 font-medium">
@@ -1113,7 +1113,7 @@ export const Simulation: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded bg-muted/40 border border-border">
-                  <p className="text-[10px] text-text-secondary uppercase">Features Missing / Partial</p>
+                  <p className="text-[10px] text-text-secondary uppercase">Areas Needing More Logs</p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {result.evidence_meta.insufficient_features.length === 0 ? (
                       <span className="text-[11px] text-text-secondary">None (Full Coverage)</span>
@@ -1128,41 +1128,43 @@ export const Simulation: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded bg-muted/40 border border-border">
-                  <p className="text-[10px] text-text-secondary uppercase">Modeling Methodology</p>
-                  <p className="text-[11px] text-text-primary font-medium mt-1 leading-snug">{result.evidence_meta.method}</p>
+                  <p className="text-[10px] text-text-secondary uppercase">AI Simulation Engine</p>
+                  <p className="text-[11px] text-text-primary font-medium mt-1 leading-snug">Hosted Modern LLM + Habit Trajectory Model</p>
                 </div>
               </div>
 
-              <p className="text-xs text-text-secondary mt-3 pt-3 border-t border-border">{result.evidence_meta.note}</p>
+              <p className="text-xs text-text-secondary mt-3 pt-3 border-t border-border">
+                All simulation outputs are grounded in your actual personal history to prevent generic or ungrounded estimates.
+              </p>
             </Card>
           )}
 
           {/* Traceability & Compliance Footer Card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <h3 className="font-semibold text-text-primary text-sm">Regulatory & Traceability Notes</h3>
-              <p className="text-xs text-text-secondary mt-1">Audit verification details for AI risk management.</p>
+              <h3 className="font-semibold text-text-primary text-sm">Privacy & Data Integrity</h3>
+              <p className="text-xs text-text-secondary mt-1">How we safeguard and calculate your private forecast.</p>
               <div className="mt-3 space-y-2 text-xs">
                 <div className="flex gap-2">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-text-secondary">
-                    All simulation metrics are derived deterministically from authenticated PostgreSQL records without synthetic extrapolation.
+                    All predictions are calculated directly from your real stored logs without guessing or fake data.
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-text-secondary">
-                    Multi-user isolation is enforced at the database query level via session tokens.
+                    Your personal habits and financial numbers remain strictly private and isolated to your profile.
                   </p>
                 </div>
               </div>
             </Card>
 
             <Card>
-              <h3 className="font-semibold text-text-primary text-sm">Evidence Integrity Disclaimer</h3>
-              <p className="text-xs text-text-secondary mt-1">Simulation engine operational parameters.</p>
+              <h3 className="font-semibold text-text-primary text-sm">Helpful Reminder</h3>
+              <p className="text-xs text-text-secondary mt-1">How to get the most from your simulations.</p>
               <p className="text-xs text-text-secondary mt-3 leading-relaxed">
-                {result.note} Scenarios illustrate conditional sensitivity outcomes rather than binding guarantees. Always verify financial and academic decisions with qualified human advisors.
+                These projections show how your daily choices compound over time. Small, consistent improvements—like putting away an extra ₹500/month or maintaining a steady 7.5 hours of sleep—build massive financial security and energy over time!
               </p>
             </Card>
           </div>

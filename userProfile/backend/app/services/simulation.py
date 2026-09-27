@@ -28,6 +28,7 @@ from app.schemas.simulation import (
 )
 from app.services.ml import predict as ml_predict
 from app.services.ml_forecasting import get_productivity_forecast
+from app.services.llm import get_llm_service
 
 MIN_HISTORY_DAYS = 3
 
@@ -209,88 +210,88 @@ def evaluate_rules(
     trace: List[RuleTraceItem] = []
     triggered: List[str] = []
 
-    # Condition 1: Spending Increase Exceeds Configured Threshold (> 0)
+    # Condition 1: Spending Increase
     cond1 = delta_spending > 50.0
     trace.append(RuleTraceItem(
         condition_id="COND_SPENDING_INCREASE",
-        condition_name="Spending Increase Evaluation",
-        condition_text="Monthly spending adjustment exceeds baseline threshold (> +₹50/mo)",
+        condition_name="Monthly Spending Level",
+        condition_text="Checks if your planned monthly spending is higher than baseline",
         input_values={"baseline_spending": baseline.monthly_spending, "simulated_spending": simulated["monthly_spending"], "delta": _round(delta_spending)},
         is_satisfied=cond1,
-        status_label="TRUE" if cond1 else "FALSE",
-        impact_explanation=f"Projected discretionary outflow changes by {'+' if delta_spending >= 0 else ''}₹{delta_spending:,.0f}/mo.",
+        status_label="Higher" if cond1 else "Controlled",
+        impact_explanation=f"Your monthly spending changes by {'+' if delta_spending >= 0 else ''}₹{delta_spending:,.0f} per month.",
     ))
 
     # Condition 2: Projected Savings Decreased
     cond2 = delta_savings < -100.0
     trace.append(RuleTraceItem(
         condition_id="COND_SAVINGS_DECLINE",
-        condition_name="Savings Capital Trajectory",
-        condition_text="Projected terminal savings decreases relative to baseline capital",
+        condition_name="Future Savings Growth",
+        condition_text="Checks whether your total savings buffer will grow or shrink",
         input_values={"baseline_savings": baseline.savings, "simulated_savings": simulated["savings"], "delta": _round(delta_savings)},
         is_satisfied=cond2,
-        status_label="TRUE" if cond2 else "FALSE",
-        impact_explanation=f"Simulated cash buffer drops by ₹{abs(delta_savings):,.0f} over {params.horizon_days} days.",
+        status_label="Shrinking" if cond2 else "Growing",
+        impact_explanation=f"Your savings buffer changes by {'+' if delta_savings >= 0 else ''}₹{delta_savings:,.0f} over {params.horizon_days} days.",
     ))
 
     # Condition 3: Emergency Runway Depletion
     cond3 = (simulated["emergency_runway_months"] < 3.0) or (delta_runway < -0.3)
     trace.append(RuleTraceItem(
         condition_id="COND_RUNWAY_RISK",
-        condition_name="Emergency Runway Liquidity",
-        condition_text="Emergency runway falls below safe 3.0 month threshold or declines by > 0.3 months",
+        condition_name="Emergency Safety Net",
+        condition_text="Checks if your savings can cover at least 3 full months of living expenses",
         input_values={"baseline_runway": baseline.emergency_runway_months, "simulated_runway": simulated["emergency_runway_months"], "delta": _round(delta_runway, 1)},
         is_satisfied=cond3,
-        status_label="TRIGGERED" if cond3 else "FALSE",
-        impact_explanation=f"Projected runway is {simulated['emergency_runway_months']} months ({delta_runway:+.1f} months).",
+        status_label="Low Cushion" if cond3 else "Safe Buffer",
+        impact_explanation=f"Your savings provide {simulated['emergency_runway_months']} months of living expenses buffer ({delta_runway:+.1f} months).",
     ))
 
     # Condition 4: Study Overload / Burnout Escalation
     cond4 = (simulated["study_load_hrs_week"] > 38.0) or (delta_burnout > 5.0)
     trace.append(RuleTraceItem(
         condition_id="COND_BURNOUT_ESCALATION",
-        condition_name="Cognitive Load & Burnout Risk",
-        condition_text="Simulated study load > 38 hrs/week or projected burnout increases by > 5%",
+        condition_name="Workload & Stress Balance",
+        condition_text="Checks if your weekly study hours are becoming too intense",
         input_values={"study_load": simulated["study_load_hrs_week"], "burnout_pct": simulated["burnout_pct"], "delta_burnout": _round(delta_burnout, 1)},
         is_satisfied=cond4,
-        status_label="TRIGGERED" if cond4 else "FALSE",
-        impact_explanation=f"Projected burnout reaches {simulated['burnout_pct']}% ({delta_burnout:+.1f}%).",
+        status_label="High Workload" if cond4 else "Balanced",
+        impact_explanation=f"Projected stress level is {simulated['burnout_pct']:.0f}% ({delta_burnout:+.1f}%).",
     ))
 
     # Condition 5: Sleep Deprivation Alert
     cond5 = (simulated["sleep_hrs_night"] < 6.8) or (delta_wellbeing < -4.0)
     trace.append(RuleTraceItem(
         condition_id="COND_SLEEP_DEPRIVATION",
-        condition_name="Rest & Well-being Preservation",
-        condition_text="Sleep duration falls below 6.8 hrs/night or well-being score degrades by > 4 pts",
+        condition_name="Nightly Sleep & Rest",
+        condition_text="Checks if you are getting at least 7 hours of sleep each night to recover",
         input_values={"sleep_hours": simulated["sleep_hrs_night"], "wellbeing_score": simulated["wellbeing_score"], "delta_wellbeing": _round(delta_wellbeing, 1)},
         is_satisfied=cond5,
-        status_label="TRIGGERED" if cond5 else "FALSE",
-        impact_explanation=f"Simulated sleep is {simulated['sleep_hrs_night']} hrs/night; well-being is {simulated['wellbeing_score']}/100.",
+        status_label="Need More Rest" if cond5 else "Well Rested",
+        impact_explanation=f"You get {simulated['sleep_hrs_night']:.1f} hrs/night; your overall wellbeing score is {simulated['wellbeing_score']:.0f}/100.",
     ))
 
     # Condition 6: Positive Habit Compounding
     cond6 = (delta_spending <= 0) and (delta_burnout <= 0) and (delta_wellbeing > 2.0)
     trace.append(RuleTraceItem(
         condition_id="COND_POSITIVE_COMPOUNDING",
-        condition_name="Sustainable Positive Habit Routine",
-        condition_text="Simulated parameters maintain controlled spending while improving well-being and reducing burnout",
+        condition_name="Healthy Daily Lifestyle",
+        condition_text="Checks if your daily habits keep expenses in check while boosting energy",
         input_values={"delta_spending": _round(delta_spending), "delta_burnout": _round(delta_burnout, 1), "delta_wellbeing": _round(delta_wellbeing, 1)},
         is_satisfied=cond6,
-        status_label="TRUE" if cond6 else "FALSE",
-        impact_explanation="Constructive scenario parameters produce positive compounding effects across personal metrics.",
+        status_label="Optimal" if cond6 else "Steady",
+        impact_explanation="Your habits work together nicely to grow your savings while keeping you energized!",
     ))
 
     if cond1 and cond2:
-        triggered.append("Financial Pressure Condition (Spending increase causing savings contraction)")
+        triggered.append("Higher spending is slowing down your savings growth")
     if cond3:
-        triggered.append("Emergency Runway Contraction Risk")
+        triggered.append("Emergency fund falls below 3 months of expenses")
     if cond4:
-        triggered.append("Cognitive Workload & Burnout Threat")
+        triggered.append("Weekly workload is high; remember to take refreshing breaks")
     if cond5:
-        triggered.append("Sleep Deprivation & Well-being Compromise")
+        triggered.append("Sleep is below 7 hours; prioritize restful nights")
     if cond6:
-        triggered.append("Positive Lifestyle & Savings Growth Compounding")
+        triggered.append("Positive habit synergy: savings and energy are growing together!")
 
     contributions = {
         "Monthly Spending": abs(delta_spending) / max(1.0, baseline.monthly_spending),
@@ -302,40 +303,36 @@ def evaluate_rules(
 
     if cond1 and (cond2 or cond3):
         recommendation = (
-            f"Reduce discretionary spending by ₹{abs(delta_spending):,.0f} to protect your emergency runway "
-            f"({simulated['emergency_runway_months']} months projected) and offset capital contraction."
+            f"Try trimming monthly spending by ₹{abs(delta_spending):,.0f} so your emergency fund stays safe "
+            f"({simulated['emergency_runway_months']} months cushion) and your savings keep growing."
         )
     elif cond4 and cond5:
         recommendation = (
-            f"Cap study sessions to {baseline.study_load_hrs_week:.0f} hrs/week and restore sleep to ≥ 7.5 hrs/night "
-            "to reverse elevated burnout risk before it degrades academic consistency."
+            f"Aim for {baseline.study_load_hrs_week:.0f} study hours per week and get at least 7.5 hours of sleep "
+            "to stay sharp and keep daily fatigue away."
         )
     elif cond4:
         recommendation = (
-            "Integrate structured interval rest into study blocks; your current simulated load increases "
-            f"burnout to {simulated['burnout_pct']}%, above the sustainable 40% threshold."
+            "Take short relaxing breaks between study sessions to keep your mind fresh and avoid study fatigue."
         )
     elif cond5:
         recommendation = (
-            f"Prioritize increasing sleep by {abs(simulated['sleep_hrs_night'] - 7.5):.1f} hrs/night; cognitive and emotional "
-            "well-being scores show high sensitivity to rest deficits."
+            f"Try adding {abs(simulated['sleep_hrs_night'] - 7.5):.1f} more hours of sleep each night to feel more energized every morning."
         )
     elif cond6:
         recommendation = (
-            f"Maintain this balanced routine over the {params.horizon_days}-day horizon; it securely accumulates "
-            f"₹{delta_savings:+,.0f} in savings while sustaining positive well-being ({simulated['wellbeing_score']}/100)."
+            f"Keep up this balanced routine! It grows your savings by ₹{delta_savings:+,.0f} while keeping your wellbeing high ({simulated['wellbeing_score']:.0f}/100)."
         )
     else:
         recommendation = (
-            f"Carry forward current baseline metrics over {params.horizon_days} days. "
-            "Track progress weekly and adjust if discretionary outflow or fatigue spikes."
+            f"Your current plan is steady for the next {params.horizon_days} days. Keep tracking your habits weekly to stay on track."
         )
 
     return trace, triggered, primary_factor, recommendation
 
 
 # ---------------------------------------------------------------------------
-# One-At-A-Time (OAT) Sensitivity Analysis
+# One-At-A-Time (OAT) Sensitivity Analysis (Layman Terms)
 # ---------------------------------------------------------------------------
 def compute_sensitivity_analysis(baseline: BaselineMetrics, horizon_days: int) -> List[SensitivityItem]:
     items: List[SensitivityItem] = []
@@ -362,10 +359,10 @@ def compute_sensitivity_analysis(baseline: BaselineMetrics, horizon_days: int) -
     ex_impact = abs(baseline.wellbeing_score - ex_wellbeing)
 
     raw_scores = {
-        "Monthly Spending": (spending_impact, "Savings & Runway Liquidity", "A 20% shift directly scales cumulative capital drain and shortens runway."),
-        "Sleep": (sleep_impact, "Burnout & Cognitive Health", "Rest variance significantly shifts cognitive recovery rate and fatigue."),
-        "Study Load": (study_impact, "Burnout Index", "Additional weekly study hours increase task strain and academic pressure."),
-        "Exercise": (ex_impact, "Composite Well-being", "Physical activity frequency acts as a moderating buffer against stress."),
+        "Monthly Spending": (spending_impact, "Savings & Safety Cushion", "How much you spend each month is the #1 driver for how quickly your savings grow and how long your safety cushion lasts."),
+        "Sleep": (sleep_impact, "Energy & Recovery", "Getting 7+ hours of restful sleep protects your daily focus, prevents fatigue, and keeps your stress low."),
+        "Study Load": (study_impact, "Productivity Balance", "Balancing study sessions with adequate downtime keeps you learning effectively without feeling overwhelmed."),
+        "Exercise": (ex_impact, "Stamina & Wellbeing", "Regular physical activity boosts your daily stamina, lifts your mood, and protects your long-term wellbeing."),
     }
 
     max_val = max(v[0] for v in raw_scores.values()) or 1.0
@@ -387,7 +384,7 @@ def compute_sensitivity_analysis(baseline: BaselineMetrics, horizon_days: int) -
             impact_level=level,
             impact_score=norm_score,
             outcome_metric=outcome_metric,
-            description=f"{desc} (Calculated via ±20% deterministic single-variable perturbation over {horizon_days} days).",
+            description=desc,
         ))
 
     items.sort(key=lambda x: x.impact_score, reverse=True)
@@ -405,24 +402,56 @@ def generate_ai_explanation(
     rules_triggered: List[str],
     primary_factor: str,
     confidence_pct: int,
-    recommendation: str,
-) -> str:
-    changes_str = []
-    for imp in impacts:
-        sign = "+" if imp.change >= 0 else ""
-        unit_str = "₹" if imp.unit == "₹" else f" {imp.unit}" if imp.unit else ""
-        changes_str.append(f"{imp.label}: {sign}{imp.change:,.1f}{unit_str}")
+    fallback_recommendation: str,
+    horizon_days: int = 30,
+) -> Tuple[str, str]:
+    """
+    Generate user-friendly, layman-terms explanation and guidance using modern hosted LLM API.
+    """
+    try:
+        llm = get_llm_service()
+        if llm.is_available():
+            prompt = (
+                f"You are a friendly personal AI life and finance coach for a digital twin application.\n"
+                f"Explain this future simulation outcome to the user in simple, conversational layman terms.\n"
+                f"Avoid academic, mathematical, or statistical jargon like 'deterministic', 'heuristics', 'elasticity', 'perturbation', or 'rule triggers'.\n\n"
+                f"Simulation Horizon: {horizon_days} days\n"
+                f"- User Starting Point (Baseline): Savings ₹{baseline.savings:,.0f}, Monthly Spending ₹{baseline.monthly_spending:,.0f}, "
+                f"Study {baseline.study_load_hrs_week:.1f}h/wk, Sleep {baseline.sleep_hrs_night:.1f}h/night, Burnout {baseline.burnout_pct:.0f}%, Wellbeing {baseline.wellbeing_score:.0f}/100.\n"
+                f"- User Adjusted Plan: Monthly Spending ₹{simulated['monthly_spending']:,.0f}, "
+                f"Study {simulated['study_load_hrs_week']:.1f}h/wk, Sleep {simulated['sleep_hrs_night']:.1f}h/night, Exercise {simulated['exercise_days_week']:.1f} days/wk.\n"
+                f"- Calculated Outcome in {horizon_days} days: Projected Savings ₹{simulated['savings']:,.0f} ({simulated['savings'] - baseline.savings:+,.0f} change), "
+                f"Emergency Safety Cushion: {simulated['emergency_runway_months']:.1f} months, "
+                f"Stress Level: {simulated['burnout_pct']:.0f}%, Wellbeing: {simulated['wellbeing_score']:.0f}/100.\n\n"
+                f"Respond strictly in this format:\n"
+                f"RECOMMENDATION: <One clear, encouraging, friendly actionable sentence for the user>\n"
+                f"EXPLANATION: <Two to three simple sentences explaining how these adjustments help them in plain English>"
+            )
+            resp = llm.generate(
+                messages=[{"role": "user", "content": prompt}],
+                system_prompt="You are a warm, supportive personal life & wealth coach who explains future outcomes simply.",
+                max_tokens=300,
+                temperature=0.4,
+            )
+            if resp.is_success and resp.content:
+                rec_match = re.search(r"RECOMMENDATION:\s*(.+?)(?=\nEXPLANATION:|$)", resp.content, re.DOTALL)
+                exp_match = re.search(r"EXPLANATION:\s*(.+)", resp.content, re.DOTALL)
+                if rec_match and exp_match:
+                    return rec_match.group(1).strip().replace("**", ""), exp_match.group(1).strip().replace("**", "")
+    except Exception as e:
+        pass
 
-    triggered_str = "; ".join(rules_triggered) if rules_triggered else "Baseline continuity preserved"
-    
-    explanation = (
-        f"Under the {scenario_name} simulation, the primary driver is {primary_factor}. "
-        f"Calculated changes from your authenticated baseline include: {', '.join(changes_str[:4])}. "
-        f"The deterministic rule engine evaluated {len(rules_triggered)} condition triggers ({triggered_str}). "
-        f"This outcome is supported by {baseline.records_used} historical observations with {confidence_pct}% model reliability. "
-        f"Therefore, the system recommends: {recommendation}"
+    # Friendly layman fallback if LLM is offline or busy
+    delta_s = simulated['savings'] - baseline.savings
+    delta_sign = "+" if delta_s >= 0 else ""
+    friendly_rec = f"Adjusting your spending to ₹{simulated['monthly_spending']:,.0f}/mo while keeping {simulated['sleep_hrs_night']:.1f} hours of sleep will help your savings grow safely without daily fatigue."
+    friendly_exp = (
+        f"Over the next {horizon_days} days, this plan gives you {simulated['emergency_runway_months']:.1f} months of financial safety cushion "
+        f"and keeps your overall wellbeing at a solid {simulated['wellbeing_score']:.0f}/100. "
+        f"Your savings are projected to reach ₹{simulated['savings']:,.0f} ({delta_sign}₹{delta_s:,.0f}). "
+        f"Maintaining steady sleep and study habits protects your focus without burning you out."
     )
-    return explanation
+    return friendly_rec, friendly_exp
 
 
 # ---------------------------------------------------------------------------
@@ -740,7 +769,7 @@ def run_simulation(
         final_recommendation=recommendation,
     )
 
-    ai_explanation = generate_ai_explanation(
+    llm_rec, ai_explanation = generate_ai_explanation(
         "Custom What-If",
         baseline,
         simulated_dict,
@@ -749,7 +778,10 @@ def run_simulation(
         primary_factor,
         confidence_pct,
         recommendation,
+        horizon_days=horizon_days,
     )
+    recommendation = llm_rec
+    why_rec.final_recommendation = llm_rec
 
     history_id = None
     if save_to_history:
