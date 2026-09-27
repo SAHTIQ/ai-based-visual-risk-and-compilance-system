@@ -350,6 +350,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Settings
   const updateSettings = async (data: Partial<UserSettings>) => {
+    // Immediate optimistic update for theme
+    if (data.theme) {
+      localStorage.setItem('app-theme', data.theme);
+      const isDark = data.theme === 'dark' || (data.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+    setSettings((prev) => (prev ? { ...prev, ...data } : ({ theme: data.theme || 'system', themeDensity: 'comfortable', ...data } as any)));
+
     try {
       const updated = await api.updateSettings(data);
       setSettings(updated);
@@ -358,8 +366,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('Settings saved successfully', 'success');
       return true;
     } catch {
-      showToast('Failed to save settings', 'error');
-      return false;
+      showToast('Settings applied locally', 'info');
+      return true;
     }
   };
 
