@@ -1,7 +1,4 @@
-﻿{
-  "buildCommand": "cd userProfile && npm run build",
-  "outputDirectory": "userProfile/dist",
-  "installCommand": "cd userProfile && npm install",
+{
   "framework": "vite",
   "rewrites": [
     {

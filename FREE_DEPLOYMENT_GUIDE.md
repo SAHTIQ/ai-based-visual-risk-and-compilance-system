@@ -1,4 +1,4 @@
-﻿# 🚀 100% Free Production Deployment Guide
+# 🚀 100% Free Production Deployment Guide
 
 Deploy the **AI-Based Visual Risk and Compliance Intelligence System** into production with **zero ongoing costs ($0.00/month)**.
 
@@ -45,7 +45,7 @@ Deploy the **AI-Based Visual Risk and Compliance Intelligence System** into prod
    - **Name**: `visual-risk-backend` (or your preferred name)
    - **Region**: Select the same or closest region to your Neon DB (e.g. `Oregon (US West)` or `Ohio`).
    - **Branch**: `main` (or your active branch)
-   - **Root Directory**: `userProfile/backend`
+   - **Root Directory**: `backend`
    - **Runtime**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
@@ -77,7 +77,7 @@ Deploy the **AI-Based Visual Risk and Compliance Intelligence System** into prod
 4. Configure the Project:
    - **Project Name**: `visual-risk-intelligence` (or your preferred name)
    - **Framework Preset**: `Vite` (automatically detected)
-   - **Root Directory**: Click **Edit** $\rightarrow$ Select `userProfile` $\rightarrow$ Click **Continue**.
+   - **Root Directory**: Leave as default root `./` (no subfolder needed!)
    - **Build and Output Settings**: Defaults are pre-configured:
      - Build Command: `npm run build`
      - Output Directory: `dist`
