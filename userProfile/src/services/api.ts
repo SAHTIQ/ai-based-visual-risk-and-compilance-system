@@ -22,16 +22,33 @@ import {
   initialUserSettings,
 } from '../data/mockData';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const resolveApiBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:8000/api';
+  const clean = String(envUrl).trim().replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
+const TOKEN_KEY = 'auth_token';
+
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    credentials: 'include', // Transmit HTTP-Only cookies automatically
     ...options,
+    headers,
+    credentials: 'include', // Transmit HTTP-Only cookies automatically
   });
 
   if (!response.ok) {
@@ -49,17 +66,25 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 export const api = {
   // ================= Auth =================
   async register(data: { name: string; email: string; password: string }) {
-    return fetchApi<any>('/auth/register', {
+    const res = await fetchApi<any>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    if (res?.token && typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, res.token);
+    }
+    return res;
   },
 
   async login(data: { email: string; password: string }) {
-    return fetchApi<any>('/auth/login', {
+    const res = await fetchApi<any>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    if (res?.token && typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, res.token);
+    }
+    return res;
   },
 
   async getCurrentUser() {
@@ -67,7 +92,13 @@ export const api = {
   },
 
   async logout() {
-    return fetchApi<any>('/auth/logout', { method: 'POST' });
+    try {
+      return await fetchApi<any>('/auth/logout', { method: 'POST' });
+    } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(TOKEN_KEY);
+      }
+    }
   },
 
   // ================= User Profile =================

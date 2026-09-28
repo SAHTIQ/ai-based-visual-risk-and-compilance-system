@@ -11,17 +11,25 @@ from app.services.activity import log_activity
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-def set_session_cookie(response: Response, user_id: int):
+def get_cookie_settings():
+    is_prod = settings.ENV.lower() == "production"
+    secure = settings.COOKIE_SECURE or is_prod
+    samesite = "none" if is_prod and settings.COOKIE_SAMESITE == "lax" else settings.COOKIE_SAMESITE
+    return secure, samesite
+
+def set_session_cookie(response: Response, user_id: int) -> str:
     token = create_session_token(user_id)
+    secure, samesite = get_cookie_settings()
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
         max_age=60 * 60 * 24 * 7,  # 7 days session
-        samesite="lax",
-        secure=False,  # Local development mode
+        samesite=samesite,
+        secure=secure,
         path="/"
     )
+    return token
 
 @router.post("/register", response_model=UserAuthOut, status_code=status.HTTP_201_CREATED)
 def register_user(user_in: UserRegister, response: Response, db: Session = Depends(get_db)):
@@ -65,8 +73,14 @@ def register_user(user_in: UserRegister, response: Response, db: Session = Depen
         description=f"Registered new account for {db_user.name} ({db_user.email})"
     )
 
-    set_session_cookie(response, db_user.id)
-    return db_user
+    token = set_session_cookie(response, db_user.id)
+    return UserAuthOut(
+        id=db_user.id,
+        name=db_user.name,
+        email=db_user.email,
+        created_at=db_user.created_at,
+        token=token
+    )
 
 @router.post("/login", response_model=UserAuthOut)
 def login_user(user_in: UserLogin, response: Response, db: Session = Depends(get_db)):
@@ -96,9 +110,15 @@ def login_user(user_in: UserLogin, response: Response, db: Session = Depends(get
     if not user or not verify_password(user_in.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
-    set_session_cookie(response, user.id)
+    token = set_session_cookie(response, user.id)
     log_activity(db, user_id=user.id, activity_type="LOGIN", description=f"User logged in ({user.email})")
-    return user
+    return UserAuthOut(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        created_at=user.created_at,
+        token=token
+    )
 
 @router.get("/me", response_model=UserAuthOut)
 def get_current_authenticated_user(current_user: User = Depends(get_current_user)):
@@ -113,10 +133,12 @@ def logout_user(response: Response, current_user: User = Depends(get_current_use
         description=f"User logged out ({current_user.email})"
     )
 
+    secure, samesite = get_cookie_settings()
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,
         path="/",
         httponly=True,
-        samesite="lax"
+        samesite=samesite,
+        secure=secure
     )
     return {"message": "Logged out successfully"}

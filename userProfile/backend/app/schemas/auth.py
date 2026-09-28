@@ -15,6 +15,7 @@ class UserAuthOut(BaseModel):
     name: str
     email: EmailStr
     created_at: datetime
+    token: str | None = None
 
     class Config:
         from_attributes = True

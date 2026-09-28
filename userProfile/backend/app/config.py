@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    ENV: str = "development"
+
     # Database
     DATABASE_URL: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/user_profiling_db"
@@ -15,12 +17,14 @@ class Settings(BaseSettings):
         "http://localhost:5173,http://127.0.0.1:5173"
     )
 
-    # Session
+    # Session & Security
     SESSION_SECRET_KEY: str = (
         "secret-key-change-in-production-ai-risk-compliance-2026"
     )
     SESSION_COOKIE_NAME: str = "user_profiling_session"
     DEV_AUTO_LOGIN: bool = True
+    COOKIE_SECURE: bool = False
+    COOKIE_SAMESITE: str = "lax"
 
     # Gemini API
     GEMINI_API_KEY: str = ""
@@ -38,6 +42,16 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def normalized_database_url(self) -> str:
+        """Ensure standard Postgres URLs from Neon, Supabase, Render use psycopg3 dialect."""
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://") and "+psycopg" not in url:
+            return url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return url
 
     @property
     def case_insensitive_cors_list(self) -> List[str]:

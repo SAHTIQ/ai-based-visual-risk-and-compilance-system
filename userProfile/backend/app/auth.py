@@ -38,11 +38,16 @@ def verify_session_token(token: str) -> int | None:
         return None
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    session_cookie = request.cookies.get(settings.SESSION_COOKIE_NAME)
-    if not session_cookie:
+    session_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
+    if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header[7:].strip()
+
+    if not session_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required. Please log in.")
 
-    user_id = verify_session_token(session_cookie)
+    user_id = verify_session_token(session_token)
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session. Please log in again.")
 
@@ -52,10 +57,15 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     return user
 
 def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> User | None:
-    session_cookie = request.cookies.get(settings.SESSION_COOKIE_NAME)
-    if not session_cookie:
+    session_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
+    if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header[7:].strip()
+
+    if not session_token:
         return None
-    user_id = verify_session_token(session_cookie)
+    user_id = verify_session_token(session_token)
     if not user_id:
         return None
     return db.query(User).filter(User.id == user_id).first()
