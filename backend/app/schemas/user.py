@@ -17,6 +17,8 @@ class UserUpdate(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    role: str = "user"
+    user_key: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     profile: Optional[ProfileOut] = None

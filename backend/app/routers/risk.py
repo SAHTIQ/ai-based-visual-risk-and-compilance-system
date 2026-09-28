@@ -68,14 +68,16 @@ def get_risk_overview(
         current_risk_status = "No Active Risks"
         risk_level_code = "low"
 
-    # Compliance status
+    # Compliance status: Documented formula
+    # Compliance Rate (%) = ((Total Detections - Total Violations) / Total Detections) * 100
+    # If Total Detections == 0, compliance is unassessed ("N/A — No Inspections") rather than falsely 100%.
     if total_detections > 0:
         total_violations_count = sum(1 for d in detections if d.is_violation)
         compliance_pct = round(((total_detections - total_violations_count) / total_detections) * 100, 1)
         compliance_status = f"{compliance_pct}% Compliant"
     else:
-        compliance_pct = 100.0
-        compliance_status = "100% Compliant"
+        compliance_pct = 0.0
+        compliance_status = "N/A — No Inspections"
 
     active_hazards = sum(1 for d in detections if d.status == "active" and d.is_violation)
     last_inspection = detections[0].detected_at.strftime("%b %d, %Y") if detections else None
@@ -96,15 +98,19 @@ def get_risk_overview(
 
 @router.get("/trends", response_model=List[RiskTrendPoint])
 def get_risk_trends(
-    days: int = 30,
+    days: int = Query(30, ge=1, le=366, description="Number of historical days to inspect (supports up to 366 days for full-year coverage)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Returns historical daily risk trend points (dates, risk score, violations, detections)
     aggregated strictly from authenticated user records.
+    
+    Formula:
+    - Daily Risk Score = min(100.0, sum(Weights of active violations))
+      where High = 35.0, Medium = 20.0, Low = 10.0. Days with 0 violations have Risk Score = 0.0.
     """
-    days_val = days if isinstance(days, int) else 30
+    days_val = max(1, min(int(days), 366))
     now_utc = datetime.now(timezone.utc)
     start_date = (now_utc - timedelta(days=days_val - 1)).date()
 
@@ -119,7 +125,7 @@ def get_risk_trends(
     daily_groups = {}
     for i in range(days_val):
         d_key = (start_date + timedelta(days=i)).isoformat()
-        daily_groups[d_key] = {"violations": 0, "detections": 0, "risk_score": 15.0}
+        daily_groups[d_key] = {"violations": 0, "detections": 0, "risk_score": 0.0}
 
     for d in detections:
         d_key = d.detected_at.date().isoformat()
@@ -150,7 +156,7 @@ def list_risk_detections(
     status: Optional[str] = None,
     risk_level: Optional[str] = None,
     only_violations: Optional[bool] = None,
-    limit: int = 25,
+    limit: int = 100,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -164,7 +170,7 @@ def list_risk_detections(
     if only_violations is not None and not hasattr(only_violations, "default"):
         query = query.filter(RiskDetection.is_violation == only_violations)
 
-    lim = limit if isinstance(limit, int) else 25
+    lim = limit if isinstance(limit, int) else 100
     items = query.order_by(RiskDetection.detected_at.desc()).limit(lim).all()
     
     return [

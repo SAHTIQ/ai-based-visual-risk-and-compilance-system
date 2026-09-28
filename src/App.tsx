@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Productivity } from './pages/Productivity';
 import { Forecasting } from './pages/Forecasting';
@@ -23,6 +24,7 @@ export function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />

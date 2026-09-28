@@ -1,0 +1,114 @@
+[
+  {
+    "id": "18",
+    "user_id": "2",
+    "title": "Why was my highest-risk detection classified ",
+    "created_at": "2026-09-27 20:26:16.098683+05:30",
+    "updated_at": "2026-09-27 21:13:09.471331+05:30"
+  },
+  {
+    "id": "3",
+    "user_id": "2",
+    "title": "hi",
+    "created_at": "2026-09-26 19:43:43.949316+05:30",
+    "updated_at": "2026-09-26 19:43:44.040540+05:30"
+  },
+  {
+    "id": "23",
+    "user_id": "2",
+    "title": "Why was my highest-risk detection classified ",
+    "created_at": "2026-09-28 20:08:34.860453+05:30",
+    "updated_at": "2026-09-28 20:08:43.003459+05:30"
+  },
+  {
+    "id": "4",
+    "user_id": "2",
+    "title": "Dashboard Session",
+    "created_at": "2026-09-26 19:44:27.327853+05:30",
+    "updated_at": "2026-09-26 19:47:45.693548+05:30"
+  },
+  {
+    "id": "24",
+    "user_id": "11",
+    "title": "Summarize my recent safety violations an",
+    "created_at": "2026-09-28 20:11:15.708942+05:30",
+    "updated_at": "2026-09-28 20:11:21.178100+05:30"
+  },
+  {
+    "id": "5",
+    "user_id": "2",
+    "title": "Explain my latest simulation results and reco",
+    "created_at": "2026-09-26 19:48:41.099430+05:30",
+    "updated_at": "2026-09-26 19:52:00.502823+05:30"
+  },
+  {
+    "id": "7",
+    "user_id": "1",
+    "title": "Explain my latest simulation results and",
+    "created_at": "2026-09-26 20:09:08.570479+05:30",
+    "updated_at": "2026-09-26 20:09:25.694119+05:30"
+  },
+  {
+    "id": "8",
+    "user_id": "1",
+    "title": "What compliance area should I investigate fir",
+    "created_at": "2026-09-26 20:10:23.283080+05:30",
+    "updated_at": "2026-09-26 20:13:55.282941+05:30"
+  },
+  {
+    "id": "9",
+    "user_id": "1",
+    "title": "analyse the three scenario and tell me",
+    "created_at": "2026-09-26 20:14:00.120043+05:30",
+    "updated_at": "2026-09-26 20:14:18.830727+05:30"
+  },
+  {
+    "id": "10",
+    "user_id": "1",
+    "title": "oii chello",
+    "created_at": "2026-09-26 20:14:37.320798+05:30",
+    "updated_at": "2026-09-26 20:15:18.313976+05:30"
+  },
+  {
+    "id": "12",
+    "user_id": "1",
+    "title": "Why was my highest-risk detection classified ",
+    "created_at": "2026-09-26 20:21:28.597894+05:30",
+    "updated_at": "2026-09-26 20:22:31.936064+05:30"
+  },
+  {
+    "id": "13",
+    "user_id": "1",
+    "title": "Dashboard Session",
+    "created_at": "2026-09-26 20:22:53.017795+05:30",
+    "updated_at": "2026-09-26 20:22:53.017795+05:30"
+  },
+  {
+    "id": "14",
+    "user_id": "3",
+    "title": "Dashboard Assistant",
+    "created_at": "2026-09-26 20:25:01.194617+05:30",
+    "updated_at": "2026-09-26 20:25:05.853122+05:30"
+  },
+  {
+    "id": "16",
+    "user_id": "3",
+    "title": "New Investigation",
+    "created_at": "2026-09-26 20:25:27.764638+05:30",
+    "updated_at": "2026-09-26 20:25:27.764638+05:30"
+  },
+  {
+    "id": "15",
+    "user_id": "3",
+    "title": "Why was my highest-risk detection classified ",
+    "created_at": "2026-09-26 20:25:22.149560+05:30",
+    "updated_at": "2026-09-27 20:14:00.973093+05:30"
+  },
+  {
+    "id": "6",
+    "user_id": "2",
+    "title": "Why was my highest-risk detection classified ",
+    "created_at": "2026-09-26 19:52:16.800926+05:30",
+    "updated_at": "2026-09-27 20:25:20.460596+05:30"
+  }
+]

@@ -99,15 +99,17 @@ def on_startup():
             # permanently stuck behind a 401 during auto-login. This is disabled
             # when DEV_AUTO_LOGIN=False.
             existing_default = db.query(User).filter(User.email == "alex.morgan@example.com").first()
-            if existing_default and settings.DEV_AUTO_LOGIN:
+            if existing_default and settings.is_dev_auto_login_allowed:
                 existing_default.password_hash = hash_password("password123")
+                existing_default.role = "admin"
                 db.commit()
 
         if user_count == 0:
             default_user = User(
                 name="Alex Morgan",
                 email="alex.morgan@example.com",
-                password_hash=hash_password("password123")
+                password_hash=hash_password("password123"),
+                role="admin"
             )
             db.add(default_user)
             db.commit()

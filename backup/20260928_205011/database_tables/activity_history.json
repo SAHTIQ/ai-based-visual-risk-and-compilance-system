@@ -1,0 +1,1498 @@
+[
+  {
+    "id": "1",
+    "user_id": "1",
+    "activity_type": "USER_CREATED",
+    "description": "Initialized default user profile and data records",
+    "metadata_json": null,
+    "created_at": "2026-08-29 15:25:47.724158+05:30"
+  },
+  {
+    "id": "2",
+    "user_id": "2",
+    "activity_type": "USER_CREATED",
+    "description": "Created user account for Test User (testuser@example.com)",
+    "metadata_json": "{\"user_id\": 2, \"email\": \"testuser@example.com\"}",
+    "created_at": "2026-08-29 15:34:12.120606+05:30"
+  },
+  {
+    "id": "3",
+    "user_id": "1",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Tom)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 15:38:24.699403+05:30"
+  },
+  {
+    "id": "4",
+    "user_id": "1",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Male\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\"}",
+    "created_at": "2026-08-29 15:38:24.744382+05:30"
+  },
+  {
+    "id": "5",
+    "user_id": "1",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Tom)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 15:38:56.887321+05:30"
+  },
+  {
+    "id": "6",
+    "user_id": "1",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Male\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\"}",
+    "created_at": "2026-08-29 15:38:56.918821+05:30"
+  },
+  {
+    "id": "7",
+    "user_id": "1",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Tom)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 15:40:56.935090+05:30"
+  },
+  {
+    "id": "8",
+    "user_id": "1",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Male\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\"}",
+    "created_at": "2026-08-29 15:40:56.967170+05:30"
+  },
+  {
+    "id": "9",
+    "user_id": "1",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Investments record: Income $15,000.00 | Expenses $10,000.00",
+    "metadata_json": "{\"record_id\": 3, \"category\": \"Investments\"}",
+    "created_at": "2026-08-29 15:41:42.792605+05:30"
+  },
+  {
+    "id": "10",
+    "user_id": "1",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 1.5 hrs for CS-502 (Computer Networks)",
+    "metadata_json": "{\"record_id\": 3, \"course\": \"CS-502\"}",
+    "created_at": "2026-08-29 15:43:36.519849+05:30"
+  },
+  {
+    "id": "11",
+    "user_id": "1",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"gym\" (50 mins)",
+    "metadata_json": "{\"record_id\": 3, \"habit_name\": \"gym\"}",
+    "created_at": "2026-08-29 15:44:37.371613+05:30"
+  },
+  {
+    "id": "12",
+    "user_id": "1",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Tom)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 16:29:30.282737+05:30"
+  },
+  {
+    "id": "13",
+    "user_id": "3",
+    "activity_type": "REGISTER",
+    "description": "Registered new account for sahtiq (sahtiq@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 18:52:17.891980+05:30"
+  },
+  {
+    "id": "14",
+    "user_id": "1",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Tom)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 18:54:40.775243+05:30"
+  },
+  {
+    "id": "15",
+    "user_id": "4",
+    "activity_type": "REGISTER",
+    "description": "Registered new account for string (user@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 19:22:50.336512+05:30"
+  },
+  {
+    "id": "16",
+    "user_id": "5",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 19:43:31.801845+05:30"
+  },
+  {
+    "id": "17",
+    "user_id": "5",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Alex Morga)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 19:53:33.385689+05:30"
+  },
+  {
+    "id": "18",
+    "user_id": "5",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Female\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"\", \"location\": \"\", \"bio\": \"\"}",
+    "created_at": "2026-08-29 19:53:33.454070+05:30"
+  },
+  {
+    "id": "19",
+    "user_id": "5",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Living Expenses record: Income $1,567.00 | Expenses $223.00",
+    "metadata_json": "{\"record_id\": 4, \"category\": \"Living Expenses\"}",
+    "created_at": "2026-08-29 19:54:22.948457+05:30"
+  },
+  {
+    "id": "20",
+    "user_id": "5",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 2.0 hrs for CS-501 (Computer Networks 3)",
+    "metadata_json": "{\"record_id\": 4, \"course\": \"CS-501\"}",
+    "created_at": "2026-08-29 19:54:59.003925+05:30"
+  },
+  {
+    "id": "21",
+    "user_id": "5",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 20:00:53.447494+05:30"
+  },
+  {
+    "id": "22",
+    "user_id": "5",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Alex)",
+    "metadata_json": null,
+    "created_at": "2026-08-29 20:01:10.739753+05:30"
+  },
+  {
+    "id": "23",
+    "user_id": "5",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Female\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"\", \"location\": \"\", \"bio\": \"\"}",
+    "created_at": "2026-08-29 20:01:10.759250+05:30"
+  },
+  {
+    "id": "24",
+    "user_id": "5",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Alex)",
+    "metadata_json": null,
+    "created_at": "2026-08-30 20:53:21.106282+05:30"
+  },
+  {
+    "id": "25",
+    "user_id": "5",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Male\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"\", \"location\": \"\", \"bio\": \"\"}",
+    "created_at": "2026-08-30 20:53:21.168570+05:30"
+  },
+  {
+    "id": "26",
+    "user_id": "5",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Alex)",
+    "metadata_json": null,
+    "created_at": "2026-08-30 20:55:56.777299+05:30"
+  },
+  {
+    "id": "27",
+    "user_id": "5",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Female\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"\", \"location\": \"\", \"bio\": \"\"}",
+    "created_at": "2026-08-30 20:55:56.839412+05:30"
+  },
+  {
+    "id": "28",
+    "user_id": "5",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"prayer\" (30 mins)",
+    "metadata_json": "{\"record_id\": 4, \"habit_name\": \"prayer\"}",
+    "created_at": "2026-08-30 20:59:14.459540+05:30"
+  },
+  {
+    "id": "29",
+    "user_id": "5",
+    "activity_type": "USER_UPDATED",
+    "description": "Updated user account information (Mohammed Sahtiq)",
+    "metadata_json": null,
+    "created_at": "2026-08-31 18:55:52.767846+05:30"
+  },
+  {
+    "id": "30",
+    "user_id": "5",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (AI engineer)",
+    "metadata_json": "{\"age\": 20, \"gender\": \"Male\", \"occupation\": \"AI engineer\", \"education\": \"Btech in Artificial Intelligence and Data science\", \"phone\": \"9361704229\", \"location\": \"tuticorin\", \"bio\": \"Aspirant software engineer\"}",
+    "created_at": "2026-08-31 18:55:52.852428+05:30"
+  },
+  {
+    "id": "31",
+    "user_id": "5",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Salary record: Income $40,000.00 | Expenses $2,000.00",
+    "metadata_json": "{\"record_id\": 5, \"category\": \"Salary\"}",
+    "created_at": "2026-08-31 18:56:56.675071+05:30"
+  },
+  {
+    "id": "32",
+    "user_id": "5",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 2.0 hrs for CS-502 (Arificial Intelligence)",
+    "metadata_json": "{\"record_id\": 5, \"course\": \"CS-502\"}",
+    "created_at": "2026-08-31 18:57:33.019211+05:30"
+  },
+  {
+    "id": "33",
+    "user_id": "5",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"gym\" (90 mins)",
+    "metadata_json": "{\"record_id\": 5, \"habit_name\": \"gym\"}",
+    "created_at": "2026-08-31 18:57:53.971746+05:30"
+  },
+  {
+    "id": "34",
+    "user_id": "5",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Marked \"prayer\" as Completed",
+    "metadata_json": "{\"record_id\": 4}",
+    "created_at": "2026-08-31 18:57:59.327342+05:30"
+  },
+  {
+    "id": "35",
+    "user_id": "5",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Marked \"prayer\" as Pending",
+    "metadata_json": "{\"record_id\": 4}",
+    "created_at": "2026-08-31 18:58:01.290147+05:30"
+  },
+  {
+    "id": "36",
+    "user_id": "5",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Living Expenses record: Income $1,000.00 | Expenses $1,800.00",
+    "metadata_json": "{\"record_id\": 6, \"category\": \"Living Expenses\"}",
+    "created_at": "2026-09-01 20:01:29.245907+05:30"
+  },
+  {
+    "id": "37",
+    "user_id": "5",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Education record: Income $1,000.00 | Expenses $3,000.00",
+    "metadata_json": "{\"record_id\": 7, \"category\": \"Education\"}",
+    "created_at": "2026-09-01 20:18:28.394822+05:30"
+  },
+  {
+    "id": "38",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 11:56:18.564298+05:30"
+  },
+  {
+    "id": "39",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 1, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-04 11:56:35.476513+05:30"
+  },
+  {
+    "id": "40",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 1, \"duration_minutes\": 1}",
+    "created_at": "2026-09-04 11:56:45.721102+05:30"
+  },
+  {
+    "id": "41",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 11:56:59.317072+05:30"
+  },
+  {
+    "id": "42",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 11:58:20.300841+05:30"
+  },
+  {
+    "id": "43",
+    "user_id": "6",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 11:58:26.844943+05:30"
+  },
+  {
+    "id": "44",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 11:58:34.114845+05:30"
+  },
+  {
+    "id": "45",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Meeting work session",
+    "metadata_json": "{\"session_id\": 578, \"activity_type\": \"Meeting\"}",
+    "created_at": "2026-09-04 13:30:56.135585+05:30"
+  },
+  {
+    "id": "46",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Meeting session (1 mins)",
+    "metadata_json": "{\"session_id\": 578, \"duration_minutes\": 1}",
+    "created_at": "2026-09-04 13:31:38.160732+05:30"
+  },
+  {
+    "id": "47",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 13:32:21.459443+05:30"
+  },
+  {
+    "id": "48",
+    "user_id": "6",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Student)",
+    "metadata_json": "{\"age\": 20, \"gender\": \"Male\", \"occupation\": \"Student\", \"education\": \"B Tech Aritificial intliigence and data science\", \"phone\": \"9361704229\", \"location\": \"Tuticorin\", \"bio\": \"Data enthusiast focused on educational analytics, financial planning, and productivity habits.\"}",
+    "created_at": "2026-09-04 13:34:50.750624+05:30"
+  },
+  {
+    "id": "49",
+    "user_id": "6",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 13:35:27.568520+05:30"
+  },
+  {
+    "id": "50",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 13:35:54.443688+05:30"
+  },
+  {
+    "id": "51",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 13:58:09.673582+05:30"
+  },
+  {
+    "id": "52",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 1155, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-04 13:59:34.387769+05:30"
+  },
+  {
+    "id": "53",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 1155, \"duration_minutes\": 1}",
+    "created_at": "2026-09-04 13:59:35.425139+05:30"
+  },
+  {
+    "id": "54",
+    "user_id": "6",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 14:10:51.400924+05:30"
+  },
+  {
+    "id": "55",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-04 14:10:57.983541+05:30"
+  },
+  {
+    "id": "56",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 20:35:05.584261+05:30"
+  },
+  {
+    "id": "57",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 20:36:25.544522+05:30"
+  },
+  {
+    "id": "58",
+    "user_id": "6",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-04 20:54:51.220708+05:30"
+  },
+  {
+    "id": "59",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-06 10:54:45.188551+05:30"
+  },
+  {
+    "id": "60",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Study work session",
+    "metadata_json": "{\"session_id\": 2020, \"activity_type\": \"Study\"}",
+    "created_at": "2026-09-06 11:33:16.516701+05:30"
+  },
+  {
+    "id": "61",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Study session (33 mins)",
+    "metadata_json": "{\"session_id\": 2020, \"duration_minutes\": 33}",
+    "created_at": "2026-09-06 12:06:38.633167+05:30"
+  },
+  {
+    "id": "62",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-06 12:07:25.199700+05:30"
+  },
+  {
+    "id": "63",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-06 12:07:49.912346+05:30"
+  },
+  {
+    "id": "64",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2021, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-06 12:07:58.459290+05:30"
+  },
+  {
+    "id": "65",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 2021, \"duration_minutes\": 1}",
+    "created_at": "2026-09-06 12:08:05.064403+05:30"
+  },
+  {
+    "id": "66",
+    "user_id": "6",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-06 12:08:37.754701+05:30"
+  },
+  {
+    "id": "67",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-06 12:08:40.119189+05:30"
+  },
+  {
+    "id": "68",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-06 12:11:15.851819+05:30"
+  },
+  {
+    "id": "69",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-06 15:04:45.963998+05:30"
+  },
+  {
+    "id": "70",
+    "user_id": "6",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 2.0 hrs for CS-501 (Database Systems & SQL Optimization)",
+    "metadata_json": "{\"record_id\": 6, \"course\": \"CS-501\"}",
+    "created_at": "2026-09-06 15:05:47.104124+05:30"
+  },
+  {
+    "id": "71",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2022, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-06 15:12:47.571346+05:30"
+  },
+  {
+    "id": "72",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 2022, \"duration_minutes\": 1}",
+    "created_at": "2026-09-06 15:12:50.732319+05:30"
+  },
+  {
+    "id": "73",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-07 20:07:31.552785+05:30"
+  },
+  {
+    "id": "74",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-07 20:13:10.713736+05:30"
+  },
+  {
+    "id": "75",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-08 15:06:49.552902+05:30"
+  },
+  {
+    "id": "76",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Study work session",
+    "metadata_json": "{\"session_id\": 2023, \"activity_type\": \"Study\"}",
+    "created_at": "2026-09-08 16:30:43.674485+05:30"
+  },
+  {
+    "id": "77",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Study session (1 mins)",
+    "metadata_json": "{\"session_id\": 2023, \"duration_minutes\": 1}",
+    "created_at": "2026-09-08 16:30:52.407804+05:30"
+  },
+  {
+    "id": "78",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Meeting work session",
+    "metadata_json": "{\"session_id\": 2024, \"activity_type\": \"Meeting\"}",
+    "created_at": "2026-09-08 16:30:55.776602+05:30"
+  },
+  {
+    "id": "79",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Meeting session (1 mins)",
+    "metadata_json": "{\"session_id\": 2024, \"duration_minutes\": 1}",
+    "created_at": "2026-09-08 16:31:00.318772+05:30"
+  },
+  {
+    "id": "80",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2025, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-08 16:31:11.013097+05:30"
+  },
+  {
+    "id": "81",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 2025, \"duration_minutes\": 1}",
+    "created_at": "2026-09-08 16:31:12.207534+05:30"
+  },
+  {
+    "id": "82",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2026, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-08 21:32:42.579355+05:30"
+  },
+  {
+    "id": "83",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 2026, \"duration_minutes\": 1}",
+    "created_at": "2026-09-08 21:33:38.205249+05:30"
+  },
+  {
+    "id": "84",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:33:51.605406+05:30"
+  },
+  {
+    "id": "85",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:33:58.723959+05:30"
+  },
+  {
+    "id": "86",
+    "user_id": "6",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:34:05.755538+05:30"
+  },
+  {
+    "id": "87",
+    "user_id": "6",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:34:09.024568+05:30"
+  },
+  {
+    "id": "88",
+    "user_id": "6",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"gym\" (30 mins)",
+    "metadata_json": "{\"record_id\": 510, \"habit_name\": \"gym\"}",
+    "created_at": "2026-09-08 21:35:31.591032+05:30"
+  },
+  {
+    "id": "89",
+    "user_id": "6",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Marked \"gym\" as Completed",
+    "metadata_json": "{\"record_id\": 510}",
+    "created_at": "2026-09-08 21:35:42.784310+05:30"
+  },
+  {
+    "id": "90",
+    "user_id": "6",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 2.0 hrs for CS-502 (Computer Networks 3)",
+    "metadata_json": "{\"record_id\": 7, \"course\": \"CS-502\"}",
+    "created_at": "2026-09-08 21:40:06.880121+05:30"
+  },
+  {
+    "id": "91",
+    "user_id": "6",
+    "activity_type": "FINANCIAL_RECORD_CREATED",
+    "description": "Added Salary record: Income $90,000.00 | Expenses $30,000.00",
+    "metadata_json": "{\"record_id\": 50, \"category\": \"Salary\"}",
+    "created_at": "2026-09-08 21:40:37.538602+05:30"
+  },
+  {
+    "id": "92",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Reading work session",
+    "metadata_json": "{\"session_id\": 2027, \"activity_type\": \"Reading\"}",
+    "created_at": "2026-09-08 21:41:06.652213+05:30"
+  },
+  {
+    "id": "93",
+    "user_id": "6",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Reading session (2 mins)",
+    "metadata_json": "{\"session_id\": 2027, \"duration_minutes\": 2}",
+    "created_at": "2026-09-08 21:43:14.983053+05:30"
+  },
+  {
+    "id": "94",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:44:04.383921+05:30"
+  },
+  {
+    "id": "95",
+    "user_id": "6",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-08 21:44:10.557510+05:30"
+  },
+  {
+    "id": "96",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:21:53.202928+05:30"
+  },
+  {
+    "id": "97",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:22:55.237111+05:30"
+  },
+  {
+    "id": "98",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:24:20.780533+05:30"
+  },
+  {
+    "id": "99",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:26:50.692399+05:30"
+  },
+  {
+    "id": "100",
+    "user_id": "1",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Male\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"+1 (555) 234-5678\", \"location\": \"Seattle, WA\", \"bio\": \"Data enthusiast focused on educational analytics, financial planning, and productivity habits.\"}",
+    "created_at": "2026-09-09 09:28:57.799208+05:30"
+  },
+  {
+    "id": "101",
+    "user_id": "1",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:29:07.225002+05:30"
+  },
+  {
+    "id": "102",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:29:21.352564+05:30"
+  },
+  {
+    "id": "103",
+    "user_id": "2",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2868, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-09 09:29:48.300464+05:30"
+  },
+  {
+    "id": "104",
+    "user_id": "2",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 2868, \"duration_minutes\": 1}",
+    "created_at": "2026-09-09 09:29:58.820553+05:30"
+  },
+  {
+    "id": "105",
+    "user_id": "2",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 2869, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-09 09:30:13.577065+05:30"
+  },
+  {
+    "id": "106",
+    "user_id": "2",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 2.0 hrs for CS-502 (Computer Networks 3)",
+    "metadata_json": "{\"record_id\": 848, \"course\": \"CS-502\"}",
+    "created_at": "2026-09-09 09:30:45.162453+05:30"
+  },
+  {
+    "id": "107",
+    "user_id": "2",
+    "activity_type": "STUDY_RECORD_CREATED",
+    "description": "Logged 4.0 hrs for CS-505 (database management system)",
+    "metadata_json": "{\"record_id\": 849, \"course\": \"CS-505\"}",
+    "created_at": "2026-09-09 09:30:58.204932+05:30"
+  },
+  {
+    "id": "108",
+    "user_id": "2",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"gym\" (30 mins)",
+    "metadata_json": "{\"record_id\": 1351, \"habit_name\": \"gym\"}",
+    "created_at": "2026-09-09 09:31:31.765444+05:30"
+  },
+  {
+    "id": "109",
+    "user_id": "2",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Started tracking habit \"DSA\" (30 mins)",
+    "metadata_json": "{\"record_id\": 1352, \"habit_name\": \"DSA\"}",
+    "created_at": "2026-09-09 09:31:50.213748+05:30"
+  },
+  {
+    "id": "110",
+    "user_id": "2",
+    "activity_type": "HABIT_RECORDED",
+    "description": "Marked \"DSA\" as Completed",
+    "metadata_json": "{\"record_id\": 1352}",
+    "created_at": "2026-09-09 09:31:53.473942+05:30"
+  },
+  {
+    "id": "111",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:32:09.348854+05:30"
+  },
+  {
+    "id": "112",
+    "user_id": "2",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (4 mins)",
+    "metadata_json": "{\"session_id\": 2869, \"duration_minutes\": 4}",
+    "created_at": "2026-09-09 09:34:24.448268+05:30"
+  },
+  {
+    "id": "113",
+    "user_id": "2",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:36:42.436469+05:30"
+  },
+  {
+    "id": "114",
+    "user_id": "3",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u003@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 09:36:57.561192+05:30"
+  },
+  {
+    "id": "115",
+    "user_id": "3",
+    "activity_type": "PROFILE_UPDATED",
+    "description": "Updated profile details (Graduate Researcher & Analyst)",
+    "metadata_json": "{\"age\": 24, \"gender\": \"Female\", \"occupation\": \"Graduate Researcher & Analyst\", \"education\": \"M.S. in Information Systems\", \"phone\": \"+1 (555) 234-5678\", \"location\": \"Seattle, WA\", \"bio\": \"Data enthusiast focused on educational analytics, financial planning, and productivity habits.\"}",
+    "created_at": "2026-09-09 09:37:49.554128+05:30"
+  },
+  {
+    "id": "116",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 10:20:44.013637+05:30"
+  },
+  {
+    "id": "117",
+    "user_id": "3",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u003@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 10:23:13.961126+05:30"
+  },
+  {
+    "id": "118",
+    "user_id": "4",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u004@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 10:23:34.380553+05:30"
+  },
+  {
+    "id": "119",
+    "user_id": "4",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Study work session",
+    "metadata_json": "{\"session_id\": 3531, \"activity_type\": \"Study\"}",
+    "created_at": "2026-09-09 19:07:29.884469+05:30"
+  },
+  {
+    "id": "120",
+    "user_id": "4",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Study session (2 mins)",
+    "metadata_json": "{\"session_id\": 3531, \"duration_minutes\": 2}",
+    "created_at": "2026-09-09 19:09:04.938974+05:30"
+  },
+  {
+    "id": "121",
+    "user_id": "4",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-09 19:11:16.147981+05:30"
+  },
+  {
+    "id": "122",
+    "user_id": "4",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-09 19:11:20.887653+05:30"
+  },
+  {
+    "id": "123",
+    "user_id": "4",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u004@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 19:11:50.265628+05:30"
+  },
+  {
+    "id": "124",
+    "user_id": "5",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u005@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 19:12:08.271626+05:30"
+  },
+  {
+    "id": "125",
+    "user_id": "5",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Reading work session",
+    "metadata_json": "{\"session_id\": 3532, \"activity_type\": \"Reading\"}",
+    "created_at": "2026-09-09 20:34:08.191708+05:30"
+  },
+  {
+    "id": "126",
+    "user_id": "5",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Reading session (1 mins)",
+    "metadata_json": "{\"session_id\": 3532, \"duration_minutes\": 1}",
+    "created_at": "2026-09-09 20:34:17.826613+05:30"
+  },
+  {
+    "id": "127",
+    "user_id": "5",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u005@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 20:38:28.206658+05:30"
+  },
+  {
+    "id": "128",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-09 20:38:37.709484+05:30"
+  },
+  {
+    "id": "129",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Other work session",
+    "metadata_json": "{\"session_id\": 3533, \"activity_type\": \"Other\"}",
+    "created_at": "2026-09-09 20:53:32.533197+05:30"
+  },
+  {
+    "id": "130",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Other session (1 mins)",
+    "metadata_json": "{\"session_id\": 3533, \"duration_minutes\": 1}",
+    "created_at": "2026-09-09 20:53:37.926247+05:30"
+  },
+  {
+    "id": "131",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-14 11:24:42.230611+05:30"
+  },
+  {
+    "id": "132",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-14 11:26:19.576873+05:30"
+  },
+  {
+    "id": "133",
+    "user_id": "1",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-14 11:40:56.182977+05:30"
+  },
+  {
+    "id": "134",
+    "user_id": "1",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-14 11:40:59.132915+05:30"
+  },
+  {
+    "id": "135",
+    "user_id": "11",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-15 09:11:36.854394+05:30"
+  },
+  {
+    "id": "136",
+    "user_id": "11",
+    "activity_type": "DEMO_DATA_GENERATED",
+    "description": "Generated 12-week (84 daily observations) synthetic demo dataset for predictive analytics.",
+    "metadata_json": null,
+    "created_at": "2026-09-17 09:52:41.786928+05:30"
+  },
+  {
+    "id": "137",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 09:54:40.603489+05:30"
+  },
+  {
+    "id": "138",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 3822, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-17 09:55:25.459195+05:30"
+  },
+  {
+    "id": "139",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 3822, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 09:55:26.470598+05:30"
+  },
+  {
+    "id": "140",
+    "user_id": "1",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-17 10:07:17.696503+05:30"
+  },
+  {
+    "id": "141",
+    "user_id": "1",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-17 10:14:55.991164+05:30"
+  },
+  {
+    "id": "142",
+    "user_id": "11",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 10:28:51.965743+05:30"
+  },
+  {
+    "id": "143",
+    "user_id": "1",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 11:01:12.594808+05:30"
+  },
+  {
+    "id": "144",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 11:01:19.514456+05:30"
+  },
+  {
+    "id": "145",
+    "user_id": "2",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 11:02:18.164045+05:30"
+  },
+  {
+    "id": "146",
+    "user_id": "3",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u003@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 11:02:27.224291+05:30"
+  },
+  {
+    "id": "147",
+    "user_id": "3",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Reading work session",
+    "metadata_json": "{\"session_id\": 3823, \"activity_type\": \"Reading\"}",
+    "created_at": "2026-09-17 11:03:26.707523+05:30"
+  },
+  {
+    "id": "148",
+    "user_id": "3",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Reading session (1 mins)",
+    "metadata_json": "{\"session_id\": 3823, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 11:03:32.978490+05:30"
+  },
+  {
+    "id": "149",
+    "user_id": "3",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Meeting work session",
+    "metadata_json": "{\"session_id\": 3824, \"activity_type\": \"Meeting\"}",
+    "created_at": "2026-09-17 11:03:46.044583+05:30"
+  },
+  {
+    "id": "150",
+    "user_id": "3",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Meeting session (1 mins)",
+    "metadata_json": "{\"session_id\": 3824, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 11:03:47.596372+05:30"
+  },
+  {
+    "id": "151",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-17 20:14:00.048375+05:30"
+  },
+  {
+    "id": "152",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 3825, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-17 20:15:08.123025+05:30"
+  },
+  {
+    "id": "153",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 3825, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 20:15:26.341717+05:30"
+  },
+  {
+    "id": "154",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Meeting work session",
+    "metadata_json": "{\"session_id\": 3826, \"activity_type\": \"Meeting\"}",
+    "created_at": "2026-09-17 20:15:46.516323+05:30"
+  },
+  {
+    "id": "155",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Meeting session (1 mins)",
+    "metadata_json": "{\"session_id\": 3826, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 20:16:04.256468+05:30"
+  },
+  {
+    "id": "156",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 3827, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-17 20:35:58.385774+05:30"
+  },
+  {
+    "id": "157",
+    "user_id": "1",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 3827, \"duration_minutes\": 1}",
+    "created_at": "2026-09-17 20:36:04.291847+05:30"
+  },
+  {
+    "id": "158",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-18 15:49:24.171591+05:30"
+  },
+  {
+    "id": "159",
+    "user_id": "1",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-18 20:59:06.511276+05:30"
+  },
+  {
+    "id": "160",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-18 20:59:57.664220+05:30"
+  },
+  {
+    "id": "161",
+    "user_id": "11",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-21 08:55:53.693353+05:30"
+  },
+  {
+    "id": "162",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-26 18:47:01.415317+05:30"
+  },
+  {
+    "id": "163",
+    "user_id": "2",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:08:49.905477+05:30"
+  },
+  {
+    "id": "164",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:08:59.353822+05:30"
+  },
+  {
+    "id": "165",
+    "user_id": "1",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:23:50.181888+05:30"
+  },
+  {
+    "id": "166",
+    "user_id": "3",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u003@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:24:51.309243+05:30"
+  },
+  {
+    "id": "167",
+    "user_id": "3",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u003@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:14:34.285825+05:30"
+  },
+  {
+    "id": "168",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:14:42.398573+05:30"
+  },
+  {
+    "id": "169",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:09:20.644218+05:30"
+  },
+  {
+    "id": "170",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:09:23.441974+05:30"
+  },
+  {
+    "id": "171",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:09:25.191906+05:30"
+  },
+  {
+    "id": "172",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:09:29.223268+05:30"
+  },
+  {
+    "id": "173",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:09:30.632214+05:30"
+  },
+  {
+    "id": "174",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:10:38.407859+05:30"
+  },
+  {
+    "id": "175",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:10:39.895898+05:30"
+  },
+  {
+    "id": "176",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:18:39.197449+05:30"
+  },
+  {
+    "id": "177",
+    "user_id": "2",
+    "activity_type": "SETTINGS_UPDATED",
+    "description": "Updated application settings",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:18:43.866505+05:30"
+  },
+  {
+    "id": "178",
+    "user_id": "11",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:11:03.690611+05:30"
+  },
+  {
+    "id": "179",
+    "user_id": "11",
+    "activity_type": "WORK_SESSION_STARTED",
+    "description": "Started Coding work session",
+    "metadata_json": "{\"session_id\": 3828, \"activity_type\": \"Coding\"}",
+    "created_at": "2026-09-28 20:11:42.142197+05:30"
+  },
+  {
+    "id": "180",
+    "user_id": "11",
+    "activity_type": "WORK_SESSION_COMPLETED",
+    "description": "Completed Coding session (1 mins)",
+    "metadata_json": "{\"session_id\": 3828, \"duration_minutes\": 1}",
+    "created_at": "2026-09-28 20:11:43.394928+05:30"
+  },
+  {
+    "id": "181",
+    "user_id": "2",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:15:50.854889+05:30"
+  },
+  {
+    "id": "182",
+    "user_id": "11",
+    "activity_type": "LOGIN",
+    "description": "User logged in (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:15:54.955682+05:30"
+  },
+  {
+    "id": "183",
+    "user_id": "11",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:36:11.901746+05:30"
+  },
+  {
+    "id": "184",
+    "user_id": "1",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:38:03.153352+05:30"
+  },
+  {
+    "id": "185",
+    "user_id": "1",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (u001@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:38:10.480345+05:30"
+  },
+  {
+    "id": "186",
+    "user_id": "11",
+    "activity_type": "LOGOUT",
+    "description": "User logged out (alex.morgan@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:38:19.574512+05:30"
+  },
+  {
+    "id": "187",
+    "user_id": "2",
+    "activity_type": "LOGIN",
+    "description": "User logged in (u002@example.com)",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:38:29.657514+05:30"
+  }
+]

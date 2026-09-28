@@ -14,6 +14,8 @@ class UserAuthOut(BaseModel):
     id: int
     name: str
     email: EmailStr
+    role: str = "user"
+    user_key: str | None = None
     created_at: datetime
     token: str | None = None
 

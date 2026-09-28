@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
@@ -114,6 +114,13 @@ export const Login: React.FC = () => {
                 className="w-full py-2.5 rounded-button border border-border text-sm font-semibold text-text-primary hover:bg-background transition-colors">
                 Use demo account
               </button>
+
+              <div className="text-center pt-2">
+                <span className="text-xs text-text-secondary">Don't have an account? </span>
+                <Link to="/register" className="text-xs font-semibold text-primary hover:underline">
+                  Create an account
+                </Link>
+              </div>
             </form>
 
             <p className="text-[11px] text-text-secondary mt-7 text-center">

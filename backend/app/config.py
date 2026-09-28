@@ -45,6 +45,17 @@ class Settings(BaseSettings):
     )
 
     @property
+    def is_dev_auto_login_allowed(self) -> bool:
+        """Never allow automatic demo login or password overwrite in production."""
+        if self.ENV.lower() == "production":
+            return False
+        return self.DEV_AUTO_LOGIN
+
+    @property
+    def is_cookie_secure(self) -> bool:
+        return self.COOKIE_SECURE or (self.ENV.lower() == "production")
+
+    @property
     def normalized_database_url(self) -> str:
         """Ensure standard Postgres URLs from Neon, Supabase, Render use psycopg3 dialect."""
         url = self.DATABASE_URL

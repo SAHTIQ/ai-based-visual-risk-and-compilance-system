@@ -56,6 +56,14 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account no longer exists.")
     return user
 
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative privileges required for this action."
+        )
+    return current_user
+
 def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> User | None:
     session_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if not session_token:
@@ -69,3 +77,28 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -
     if not user_id:
         return None
     return db.query(User).filter(User.id == user_id).first()
+
+# In-memory rate limiting for authentication endpoints
+import time
+from collections import defaultdict
+
+_auth_rate_limits = defaultdict(list)
+
+def check_auth_rate_limit(key: str, max_attempts: int = 10, window_seconds: int = 300) -> None:
+    """Enforce rate limits per IP or email to prevent brute-force attacks."""
+    now = time.time()
+    attempts = _auth_rate_limits[key]
+    valid_attempts = [t for t in attempts if now - t < window_seconds]
+    if len(valid_attempts) >= max_attempts:
+        retry_after = int(window_seconds - (now - valid_attempts[0]))
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many authentication attempts. Please try again after {retry_after} seconds.",
+            headers={"Retry-After": str(max_attempts)}
+        )
+    valid_attempts.append(now)
+    _auth_rate_limits[key] = valid_attempts
+
+def clear_auth_rate_limit(key: str) -> None:
+    if key in _auth_rate_limits:
+        del _auth_rate_limits[key]

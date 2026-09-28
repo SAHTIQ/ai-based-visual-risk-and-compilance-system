@@ -1,0 +1,434 @@
+[
+  {
+    "id": "5",
+    "conversation_id": "3",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:43:43.976608+05:30"
+  },
+  {
+    "id": "6",
+    "conversation_id": "3",
+    "sender": "assistant",
+    "content": "\u26a0\ufe0f **AI Service Notice**: OpenAI API key is not configured.\n\nTo enable live OpenAI generation, set `OPENAI_API_KEY=your_key` in `backend/.env` and restart the backend server.\n\nThe backend data grounding, conversation memory, and risk analytics pipelines are fully operational.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:43:44.043527+05:30"
+  },
+  {
+    "id": "7",
+    "conversation_id": "4",
+    "sender": "user",
+    "content": "Explain my latest risk status.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:44:29.290021+05:30"
+  },
+  {
+    "id": "8",
+    "conversation_id": "4",
+    "sender": "assistant",
+    "content": "\u26a0\ufe0f **AI Service Notice**: OpenAI API key is not configured.\n\nTo enable live OpenAI generation, set `OPENAI_API_KEY=your_key` in `backend/.env` and restart the backend server.\n\nThe backend data grounding, conversation memory, and risk analytics pipelines are fully operational.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:44:29.366966+05:30"
+  },
+  {
+    "id": "9",
+    "conversation_id": "4",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:47:17.273013+05:30"
+  },
+  {
+    "id": "10",
+    "conversation_id": "4",
+    "sender": "assistant",
+    "content": "\u26a0\ufe0f **AI Service Notice**: OpenAI API key is not configured.\n\nTo enable live OpenAI generation, set `OPENAI_API_KEY=your_key` in `backend/.env` and restart the backend server.\n\nThe backend data grounding, conversation memory, and risk analytics pipelines are fully operational.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:47:17.336990+05:30"
+  },
+  {
+    "id": "11",
+    "conversation_id": "4",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:47:39.371487+05:30"
+  },
+  {
+    "id": "12",
+    "conversation_id": "4",
+    "sender": "assistant",
+    "content": "Rate limit reached with the OpenAI service. Please wait a moment before asking another question.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:47:45.697534+05:30"
+  },
+  {
+    "id": "13",
+    "conversation_id": "5",
+    "sender": "user",
+    "content": "Explain my latest simulation results and recommendations.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:48:43.079044+05:30"
+  },
+  {
+    "id": "14",
+    "conversation_id": "5",
+    "sender": "assistant",
+    "content": "Rate limit reached with the OpenAI service. Please wait a moment before asking another question.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:48:47.038768+05:30"
+  },
+  {
+    "id": "15",
+    "conversation_id": "5",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:49:10.944446+05:30"
+  },
+  {
+    "id": "16",
+    "conversation_id": "5",
+    "sender": "assistant",
+    "content": "Rate limit reached with the OpenAI service. Please wait a moment before asking another question.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:49:14.124693+05:30"
+  },
+  {
+    "id": "17",
+    "conversation_id": "5",
+    "sender": "user",
+    "content": "HI",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:51:55.394204+05:30"
+  },
+  {
+    "id": "18",
+    "conversation_id": "5",
+    "sender": "assistant",
+    "content": "Rate limit reached with the OpenAI service. Please wait a moment before asking another question.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 19:52:00.505829+05:30"
+  },
+  {
+    "id": "19",
+    "conversation_id": "6",
+    "sender": "user",
+    "content": "Why was my highest-risk detection classified as high risk?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:08:26.244280+05:30"
+  },
+  {
+    "id": "20",
+    "conversation_id": "6",
+    "sender": "assistant",
+    "content": "**Insufficient Evidence**: The application records do not contain evidence for this request.\n\nAccording to your authenticated profile:\n* **Current Risk Status**: No Detections Recorded\n* **Total Detections**: 0\n* **Recent Violations Count**: 0\n* **Compliance Status**: Compliant (No Violations Recorded)\n* **Compliance Rate**: 100.0%\n\nBecause there are no detections or safety violations logged in your records, no event has been classified as high risk.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:08:30.675344+05:30"
+  },
+  {
+    "id": "21",
+    "conversation_id": "7",
+    "sender": "user",
+    "content": "Explain my latest simulation results and recommendations.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:09:08.603060+05:30"
+  },
+  {
+    "id": "22",
+    "conversation_id": "7",
+    "sender": "assistant",
+    "content": "Gemini API error (503). Check the backend logs for details.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:09:25.696622+05:30"
+  },
+  {
+    "id": "23",
+    "conversation_id": "8",
+    "sender": "user",
+    "content": "What compliance area should I investigate first?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:10:25.975151+05:30"
+  },
+  {
+    "id": "24",
+    "conversation_id": "8",
+    "sender": "assistant",
+    "content": "Based on your authenticated records, here is the current status and the primary area requiring your attention:\n\n### 1. Visual Risk & Operational Compliance Status\n* **Compliance Status**: Compliant (No Violations Recorded)\n* **Compliance Rate**: **100.0%**\n* **Total Detections / Recent Violations**: **0**\n\nBecause there are **no active visual violations or non-compliance detections** recorded in your system logs, there are no immediate safety or regulatory violation tickets to triage.\n\n---\n\n### 2. Primary Area to Investigate: Emergency Runway Liquidity\nThe system's deterministic rule engine has flagged one active condition trigger under your risk simulation:\n\n* **Rule Triggered**: **Emergency Runway Liquidity** (*Emergency Runway Contraction Risk*)\n* **Emergency Runway**: **0.0 months**\n* **Current Savings**: **\u20b90**\n* **Monthly Spending**: **\u20b910,279**\n\n**Why investigate this first**: With zero emergency runway, any disruption directly threatens operational continuity. The system's risk scenario highlights the need for defensive budgeting and expense tracking before discretionary outflow compounds liquidity stress.\n\n---\n\n### 3. Secondary Area to Monitor: Productivity Contraction\n* **Metric**: Productivity Score\n* **Current Value**: **75.0**\n* **Predicted Value**: **51.6** (Trend: **decreasing**, Model confidence: **14.6%**)\n* **Current Workload & Recovery**: Study load is **6.1 hrs/week**, Sleep is **8.0 hrs/night**, and Burnout Index stands at **21.8%**.\n\nWhile your cognitive recovery indicators (sleep and burnout) are currently stable, the ML model indicates a downward trend in focus efficiency. Tracking your ratio of deep-work sessions versus distractions over the next 30 days is recommended to prevent this drop.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:10:34.685750+05:30"
+  },
+  {
+    "id": "25",
+    "conversation_id": "8",
+    "sender": "user",
+    "content": "gie me in summarized form",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:10:57.071590+05:30"
+  },
+  {
+    "id": "26",
+    "conversation_id": "8",
+    "sender": "assistant",
+    "content": "Here is the summary of where to focus:\n\n* **Top Priority to Investigate**: **Emergency Runway Liquidity**  \n  * **Trigger**: *Emergency Runway Contraction Risk*\n  * **Current Metrics**: **0.0 months** runway, **\u20b90** savings against **\u20b910,279** monthly spending.\n  * **Action**: Review monthly outflows and apply defensive budgeting to build an emergency reserve.\n\n* **Operational Compliance Status**: **Clean (No Action Needed)**  \n  * **Compliance Rate**: **100.0%** with **0** active violations or detections.\n\n* **Secondary Metric to Monitor**: **Productivity Decline**  \n  * **Forecast**: Predicted to drop from **75.0** to **51.6** (LinearRegression model, 14.6% confidence). Keep focus hours steady to counteract this trend.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:11:02.482877+05:30"
+  },
+  {
+    "id": "27",
+    "conversation_id": "8",
+    "sender": "user",
+    "content": "in layman term",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:11:16.316841+05:30"
+  },
+  {
+    "id": "28",
+    "conversation_id": "8",
+    "sender": "assistant",
+    "content": "In simple terms:\n\n* **Your main issue to look into**: **You have no emergency fund.**  \n  You are spending **\u20b910,279** a month and currently have **\u20b90** in savings (0 months of financial backup). If an unexpected expense pops up, you have no safety net. Focus on tightening your budget first.\n\n* **Your compliance score**: **100% (All clear).**  \n  You have zero violations and no safety/rule issues on record.\n\n* **One thing to keep an eye on**: **Your focus at work.**  \n  The system predicts your productivity might drop from **75** down to **51**, so try to avoid distractions during your work sessions.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:11:22.402901+05:30"
+  },
+  {
+    "id": "29",
+    "conversation_id": "8",
+    "sender": "user",
+    "content": "oii",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:13:47.265861+05:30"
+  },
+  {
+    "id": "30",
+    "conversation_id": "8",
+    "sender": "assistant",
+    "content": "Hey Tom! How can I help you today? Let me know if you want to look further into your metrics, run a scenario, or check anything else on the system.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:13:55.286613+05:30"
+  },
+  {
+    "id": "31",
+    "conversation_id": "9",
+    "sender": "user",
+    "content": "analyse the three scenario and tell me",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:14:11.941981+05:30"
+  },
+  {
+    "id": "32",
+    "conversation_id": "9",
+    "sender": "assistant",
+    "content": "Based on your authenticated system records and the **Future Simulation** model (supported by 286 historical observations with 83% reliability), here is the analysis of your three 30-day projection scenarios evaluated against your current baseline:\n\n---\n\n### **Baseline Context**\n* **Monthly Spending:** \u20b910,279\n* **Savings:** \u20b90\n* **Emergency Runway:** 0.0 months\n* **Burnout Index:** 21.8%\n* **Well-being Score:** 62.5/100\n* **Sleep & Study Load:** 8.0 hrs/night sleep | 6.1 hrs/week study load\n\n---\n\n### **Analysis of the Three Scenarios**\n\n#### 1. **Best-Case Scenario (Optimistic Projection)**\n* **Projected Outcome:** Projected Optimistic Scenario over 30 days.\n* **System Recommendation:** *\"Protect this high-efficiency rhythm; savings and cognitive recovery are optimally aligned.\"*\n* **Analysis:** In this trajectory, your study pace and cognitive recovery remain stable, enabling you to build momentum without increasing burnout. However, capital preservation remains vital given the zero-month baseline runway.\n\n---\n\n#### 2. **Expected Scenario (Baseline Trajectory)**\n* **Projected Outcome:** Projected Expected Scenario over 30 days.\n* **System Recommendation:** *\"Carry forward current baseline metrics over 30 days. Track progress weekly and adjust if discretionary outflow or fatigue spikes.\"*\n* **Analysis:** This scenario reflects your current operational pattern holding steady over the next month. While your burnout (21.8%) and well-being (62.5/100) are stable, the absence of an emergency buffer means",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:14:18.831722+05:30"
+  },
+  {
+    "id": "33",
+    "conversation_id": "10",
+    "sender": "user",
+    "content": "oii chello",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:14:43.692558+05:30"
+  },
+  {
+    "id": "34",
+    "conversation_id": "10",
+    "sender": "assistant",
+    "content": "Hello Tom! How can I assist you today with your risk intelligence, compliance status, or productivity analytics?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:14:50.901297+05:30"
+  },
+  {
+    "id": "35",
+    "conversation_id": "10",
+    "sender": "user",
+    "content": "tell me about yourself",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:15:04.009969+05:30"
+  },
+  {
+    "id": "36",
+    "conversation_id": "10",
+    "sender": "assistant",
+    "content": "I am the AI Assistant embedded directly within your **AI-Based Visual Risk and Compliance Intelligence System**. \n\nMy primary purpose is to help you monitor, analyze, and optimize your risk, compliance, and productivity data. Here is what I do:\n\n* **Visual Risk & Compliance Intelligence:** I monitor your compliance records, track safety or operational violations, and analyze visual inspection logs. Currently, your profile shows a **100.0% compliance rate** with **0 recorded violations**.\n* **Predictive ML Analytics:** I interpret machine learning models trained on your activity\u2014such as evaluating trends in your focus, work sessions, and productivity scores.\n* **Future Simulation & Risk Modeling:** I evaluate multi-factor deterministic simulations (such as work load, spending, burnout rates, and emergency runways) across optimistic, expected, and risk scenarios to deliver actionable recommendations.\n* **Technical & Domain Support:** Beyond your specific platform metrics, I can assist with general machine learning concepts, safety and regulatory compliance standards, research workflows, or data analysis best practices.\n\nWhenever you need a breakdown of your metrics, forecast explanations, or risk recommendations, I am here to help! What would you like to explore?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:15:18.314975+05:30"
+  },
+  {
+    "id": "39",
+    "conversation_id": "12",
+    "sender": "user",
+    "content": "Why was my highest-risk detection classified as high risk?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:21:30.641984+05:30"
+  },
+  {
+    "id": "40",
+    "conversation_id": "12",
+    "sender": "assistant",
+    "content": "**Insufficient Evidence**: The application records do not contain evidence for this request.\n\nAccording to your authenticated system records, there are currently no detections or violations logged:\n\n* **Current risk status**: No Detections Recorded\n* **Total detections**: 0\n* **Recent violations count**: 0\n* **Compliance status**: Compliant (No Violations Recorded)\n* **Compliance rate**: 100.0%\n\nBecause no visual risk detections exist in your profile, there is no high-risk classification or associated evidence to review.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:21:44.864375+05:30"
+  },
+  {
+    "id": "41",
+    "conversation_id": "12",
+    "sender": "user",
+    "content": ".",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:22:27.275936+05:30"
+  },
+  {
+    "id": "42",
+    "conversation_id": "12",
+    "sender": "assistant",
+    "content": "Hello Tom. It looks like your message was blank or sent by mistake. \n\nHow can I assist you today? I can help you with:\n\n* **Risk & Compliance Intelligence**: Reviewing detection logs, compliance rates, or violation statuses.\n* **ML Productivity Forecasts**: Discussing your current productivity baseline (75.0) and model projections (51.6).\n* **Future Simulation & What-If Scenarios**: Exploring your 30-day baseline metrics, runway liquidity, and burnout index.\n* **General Knowledge & Inquiries**: Answering questions regarding safety protocols, compliance regulations, or analytical methods.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:22:31.939175+05:30"
+  },
+  {
+    "id": "43",
+    "conversation_id": "14",
+    "sender": "user",
+    "content": "Summarize my recent violations.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:25:01.208555+05:30"
+  },
+  {
+    "id": "44",
+    "conversation_id": "14",
+    "sender": "assistant",
+    "content": "Based on your verified records in the Risk Intelligence system, you currently have no recorded violations. \n\nHere is a summary of your compliance status:\n\n* **Current Risk Status**: No Detections Recorded\n* **Recent Violations Count**: 0\n* **Total Detections**: 0\n* **Compliance Rate**: 100.0%\n* **Compliance Status**: Compliant (No Violations Recorded)\n\nThere are no active or historical violation events logged in your profile.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:25:05.857258+05:30"
+  },
+  {
+    "id": "45",
+    "conversation_id": "15",
+    "sender": "user",
+    "content": "Why was my highest-risk detection classified as high risk?",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:25:26.057055+05:30"
+  },
+  {
+    "id": "46",
+    "conversation_id": "15",
+    "sender": "assistant",
+    "content": "**Insufficient Evidence**: The application records do not contain evidence for this request.\n\nAccording to your verified profile data:\n* **Current Risk Status**: No Detections Recorded\n* **Total Detections**: 0\n* **Recent Violations Count**: 0\n* **Compliance Status**: Compliant (No Violations Recorded) (100.0%)\n\nBecause no visual detections or risk violations have been logged in your account, there is no high-risk classification record to evaluate.",
+    "metadata_json": null,
+    "created_at": "2026-09-26 20:25:32.740469+05:30"
+  },
+  {
+    "id": "49",
+    "conversation_id": "15",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:13:56.488958+05:30"
+  },
+  {
+    "id": "50",
+    "conversation_id": "15",
+    "sender": "assistant",
+    "content": "Hello sahtiq! How can I assist you today? \n\nI can help you review your compliance status, explore your ML productivity forecasts, examine your 30-day baseline simulation metrics, or answer general questions regarding risk intelligence and compliance standards.",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:14:00.975983+05:30"
+  },
+  {
+    "id": "51",
+    "conversation_id": "6",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:25:08.055176+05:30"
+  },
+  {
+    "id": "52",
+    "conversation_id": "6",
+    "sender": "assistant",
+    "content": "Hello, Test User. How can I assist you today with your risk intelligence, compliance metrics, ML predictions, or simulation analytics?",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:25:20.462610+05:30"
+  },
+  {
+    "id": "53",
+    "conversation_id": "18",
+    "sender": "user",
+    "content": "Why was my highest-risk detection classified as high risk?",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:26:17.300482+05:30"
+  },
+  {
+    "id": "54",
+    "conversation_id": "18",
+    "sender": "assistant",
+    "content": "**Insufficient Evidence**: The application records do not contain evidence for this request.\n\nAccording to your verified profile data:\n* **Current risk status**: No Detections Recorded\n* **Total detections**: 0\n* **Recent violations count**: 0\n* **Compliance status**: Compliant (No Violations Recorded)\n\nBecause there are no detections or violations logged in the system, no events have been classified as high risk.",
+    "metadata_json": null,
+    "created_at": "2026-09-27 20:26:28.735907+05:30"
+  },
+  {
+    "id": "59",
+    "conversation_id": "18",
+    "sender": "user",
+    "content": "hi",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:06:02.301182+05:30"
+  },
+  {
+    "id": "60",
+    "conversation_id": "18",
+    "sender": "assistant",
+    "content": "The Gemini API rate limit or quota was reached. Check your Gemini API usage and try again later.",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:06:11.690993+05:30"
+  },
+  {
+    "id": "61",
+    "conversation_id": "18",
+    "sender": "user",
+    "content": "what if i save half of my salary for one month?",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:12:49.014221+05:30"
+  },
+  {
+    "id": "62",
+    "conversation_id": "18",
+    "sender": "assistant",
+    "content": "The Gemini API rate limit or quota was reached. Check your Gemini API usage and try again later.",
+    "metadata_json": null,
+    "created_at": "2026-09-27 21:13:09.474203+05:30"
+  },
+  {
+    "id": "67",
+    "conversation_id": "23",
+    "sender": "user",
+    "content": "Why was my highest-risk detection classified as high risk?",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:08:37.707195+05:30"
+  },
+  {
+    "id": "68",
+    "conversation_id": "23",
+    "sender": "assistant",
+    "content": "The Gemini API rate limit or quota was reached. Check your Gemini API usage and try again later.",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:08:43.006448+05:30"
+  },
+  {
+    "id": "69",
+    "conversation_id": "24",
+    "sender": "user",
+    "content": "Summarize my recent safety violations and evidence.",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:11:15.749356+05:30"
+  },
+  {
+    "id": "70",
+    "conversation_id": "24",
+    "sender": "assistant",
+    "content": "The Gemini API rate limit or quota was reached. Check your Gemini API usage and try again later.",
+    "metadata_json": null,
+    "created_at": "2026-09-28 20:11:21.183876+05:30"
+  }
+]

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.config import settings
@@ -6,14 +6,21 @@ from app.models.user import User
 from app.models.profile import UserProfile
 from app.models.settings import UserSettings
 from app.schemas.auth import UserRegister, UserLogin, UserAuthOut
-from app.auth import hash_password, verify_password, create_session_token, get_current_user
+from app.auth import (
+    hash_password,
+    verify_password,
+    create_session_token,
+    get_current_user,
+    check_auth_rate_limit,
+    clear_auth_rate_limit,
+)
 from app.services.activity import log_activity
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 def get_cookie_settings():
     is_prod = settings.ENV.lower() == "production"
-    secure = settings.COOKIE_SECURE or is_prod
+    secure = settings.is_cookie_secure
     samesite = "none" if is_prod and settings.COOKIE_SAMESITE == "lax" else settings.COOKIE_SAMESITE
     return secure, samesite
 
@@ -32,8 +39,12 @@ def set_session_cookie(response: Response, user_id: int) -> str:
     return token
 
 @router.post("/register", response_model=UserAuthOut, status_code=status.HTTP_201_CREATED)
-def register_user(user_in: UserRegister, response: Response, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == user_in.email.lower()).first()
+def register_user(request: Request, user_in: UserRegister, response: Response, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    check_auth_rate_limit(f"reg_ip_{client_ip}", max_attempts=10, window_seconds=300)
+
+    clean_email = user_in.email.lower().strip()
+    existing = db.query(User).filter(User.email == clean_email).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,8 +59,9 @@ def register_user(user_in: UserRegister, response: Response, db: Session = Depen
 
     db_user = User(
         name=user_in.name.strip(),
-        email=user_in.email.lower().strip(),
-        password_hash=hash_password(user_in.password)
+        email=clean_email,
+        password_hash=hash_password(user_in.password),
+        role="user"
     )
     db.add(db_user)
     db.commit()
@@ -58,12 +70,13 @@ def register_user(user_in: UserRegister, response: Response, db: Session = Depen
     # Initialize default user profile
     db_profile = UserProfile(
         user_id=db_user.id,
-        age=24,
-        gender="Female",
-        occupation="Graduate Researcher & Analyst",
-        education="M.S. in Information Systems"
+        age=None,
+        gender=None,
+        occupation="Safety & Risk Analyst",
+        education=None
     )
     db.add(db_profile)
+    db.add(UserSettings(user_id=db_user.id))
     db.commit()
 
     log_activity(
@@ -78,21 +91,27 @@ def register_user(user_in: UserRegister, response: Response, db: Session = Depen
         id=db_user.id,
         name=db_user.name,
         email=db_user.email,
+        role=db_user.role,
+        user_key=db_user.user_key,
         created_at=db_user.created_at,
         token=token
     )
 
 @router.post("/login", response_model=UserAuthOut)
-def login_user(user_in: UserLogin, response: Response, db: Session = Depends(get_db)):
-    email = user_in.email.lower().strip()
-    user = db.query(User).filter(User.email == email).first()
+def login_user(request: Request, user_in: UserLogin, response: Response, db: Session = Depends(get_db)):
+    clean_email = user_in.email.lower().strip()
+    client_ip = request.client.host if request.client else "unknown"
 
-    # Local presentation/demo mode: guarantee that the frontend's seeded
-    # account can always establish a valid session. This never runs when
-    # DEV_AUTO_LOGIN is disabled.
-    if settings.DEV_AUTO_LOGIN and email == "alex.morgan@example.com" and user_in.password == "password123":
+    # Enforce rate limiting per account and IP
+    check_auth_rate_limit(f"login_ip_{client_ip}", max_attempts=15, window_seconds=300)
+    check_auth_rate_limit(f"login_email_{clean_email}", max_attempts=8, window_seconds=300)
+
+    user = db.query(User).filter(User.email == clean_email).first()
+
+    # Local development demo mode: strictly blocked in production
+    if settings.is_dev_auto_login_allowed and clean_email == "alex.morgan@example.com" and user_in.password == "password123":
         if user is None:
-            user = User(name="Alex Morgan", email=email, password_hash=hash_password("password123"))
+            user = User(name="Alex Morgan", email=clean_email, password_hash=hash_password("password123"), role="admin")
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -102,7 +121,7 @@ def login_user(user_in: UserLogin, response: Response, db: Session = Depends(get
             db.refresh(user)
 
         if db.query(UserProfile).filter(UserProfile.user_id == user.id).first() is None:
-            db.add(UserProfile(user_id=user.id, age=24, gender="Female", occupation="Graduate Researcher & Analyst", education="M.S. in Information Systems"))
+            db.add(UserProfile(user_id=user.id, age=24, gender="Female", occupation="Safety & Compliance Lead", education="M.S. in Information Systems"))
         if db.query(UserSettings).filter(UserSettings.user_id == user.id).first() is None:
             db.add(UserSettings(user_id=user.id))
         db.commit()
@@ -110,19 +129,31 @@ def login_user(user_in: UserLogin, response: Response, db: Session = Depends(get
     if not user or not verify_password(user_in.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
+    clear_auth_rate_limit(f"login_email_{clean_email}")
+
     token = set_session_cookie(response, user.id)
     log_activity(db, user_id=user.id, activity_type="LOGIN", description=f"User logged in ({user.email})")
     return UserAuthOut(
         id=user.id,
         name=user.name,
         email=user.email,
+        role=user.role,
+        user_key=user.user_key,
         created_at=user.created_at,
         token=token
     )
 
 @router.get("/me", response_model=UserAuthOut)
 def get_current_authenticated_user(current_user: User = Depends(get_current_user)):
-    return current_user
+    return UserAuthOut(
+        id=current_user.id,
+        name=current_user.name,
+        email=current_user.email,
+        role=current_user.role,
+        user_key=current_user.user_key,
+        created_at=current_user.created_at,
+        token=None
+    )
 
 @router.post("/logout")
 def logout_user(response: Response, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
