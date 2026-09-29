@@ -73,7 +73,7 @@ class ChatAndLLMTests(unittest.TestCase):
         self.assertIn("content", resp.to_dict())
         if not llm.is_available():
             self.assertFalse(resp.is_configured)
-            self.assertIn("OpenAI API key", resp.content)
+            self.assertIn("API key", resp.content)
 
     def test_app_context_extraction(self):
         """Verify user risk context extracts real records and enforces no fabrication."""

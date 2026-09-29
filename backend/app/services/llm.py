@@ -63,28 +63,26 @@ class BaseLLMProvider(ABC):
         pass
 
 
-class GeminiLLMService(BaseLLMProvider):
+class QwenLLMService(BaseLLMProvider):
     """
-    Gemini provider using Google's OpenAI-compatible API endpoint.
+    Qwen LLM Provider configured for Qwen/Qwen3-Next-80B-A3B-Instruct.
 
-    Keeps the existing OpenAI SDK client interface while sending
-    requests to Google's Gemini API.
+    Connects via Hugging Face's official OpenAI-compatible inference router
+    (https://router.huggingface.co/v1) or any OpenAI-compatible provider/endpoint.
     """
 
     def __init__(self):
-        self.api_key = (settings.GEMINI_API_KEY or "").strip()
-        self.model = settings.GEMINI_MODEL or "gemini-3.8-flash"
-        self.base_url = (
-            settings.GEMINI_BASE_URL
-            or "https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
-        self.timeout = settings.GEMINI_TIMEOUT_SECONDS or 30.0
+        self.api_key = settings.active_llm_api_key
+        self.model = settings.active_llm_model
+        self.base_url = settings.active_llm_base_url
+        self.timeout = getattr(settings, "LLM_TIMEOUT_SECONDS", 60.0)
 
         self._client: Optional[OpenAI] = None
 
         if (
             self.api_key
-            and not self.api_key.startswith("your-gemini-api-key")
+            and not self.api_key.startswith("your-")
+            and not self.api_key.startswith("hf_placeholder")
         ):
             try:
                 self._client = OpenAI(
@@ -93,10 +91,14 @@ class GeminiLLMService(BaseLLMProvider):
                     timeout=self.timeout,
                 )
 
-                logger.info("Gemini client initialized successfully.")
+                logger.info(
+                    "Qwen LLM client initialized successfully (model: %s, base_url: %s).",
+                    self.model,
+                    self.base_url,
+                )
 
             except Exception:
-                logger.exception("Failed to initialize Gemini client.")
+                logger.exception("Failed to initialize Qwen LLM client.")
                 self._client = None
 
     def is_available(self) -> bool:
@@ -112,19 +114,21 @@ class GeminiLLMService(BaseLLMProvider):
 
         if not self.is_available():
             logger.warning(
-                "Gemini API key is not configured or client initialization failed."
+                "LLM API key is not configured or client initialization failed."
             )
 
             return LLMResponse(
                 content=(
-                    "AI Service Notice: Gemini API key is not configured.\n\n"
-                    "Set GEMINI_API_KEY in your backend .env file "
-                    "and restart the backend server."
+                    "AI Service Notice: Hugging Face API key (HF_TOKEN) is not configured.\n\n"
+                    "To enable Qwen/Qwen3-Next-80B-A3B-Instruct, get a free access token from "
+                    "https://huggingface.co/settings/tokens and add it to your .env file:\n\n"
+                    "HF_TOKEN=hf_your_token_here\n\n"
+                    "Then restart your backend server."
                 ),
                 model=self.model,
                 is_success=False,
                 is_configured=False,
-                error_message="GEMINI_API_KEY is not configured.",
+                error_message="HF_TOKEN / LLM_API_KEY is not configured.",
             )
 
         full_messages = []
@@ -156,8 +160,9 @@ class GeminiLLMService(BaseLLMProvider):
 
         try:
             logger.info(
-                "Calling Gemini model '%s' with %s messages...",
+                "Calling Qwen model '%s' via %s with %s messages...",
                 self.model,
+                self.base_url,
                 len(full_messages),
             )
 
@@ -171,7 +176,7 @@ class GeminiLLMService(BaseLLMProvider):
             elapsed = round(time.time() - start_time, 2)
 
             logger.info(
-                "Gemini completion succeeded in %s seconds.",
+                "Qwen completion succeeded in %s seconds.",
                 elapsed,
             )
 
@@ -205,25 +210,25 @@ class GeminiLLMService(BaseLLMProvider):
             )
 
         except RateLimitError as e:
-            logger.error("Gemini rate limit or quota error: %s", e)
+            logger.error("LLM rate limit or quota error: %s", e)
 
             return LLMResponse(
                 content=(
-                    "The Gemini API rate limit or quota was reached. "
-                    "Check your Gemini API usage and try again later."
+                    "The model provider rate limit or quota was reached. "
+                    "Please wait a moment and try again."
                 ),
                 model=self.model,
                 is_success=False,
                 is_configured=True,
-                error_message=f"Gemini rate limit or quota error: {str(e)}",
+                error_message=f"Rate limit or quota error: {str(e)}",
             )
 
         except APITimeoutError as e:
-            logger.error("Gemini API request timed out: %s", e)
+            logger.error("LLM API request timed out: %s", e)
 
             return LLMResponse(
                 content=(
-                    "The request to Gemini timed out. "
+                    "The request to the model provider timed out. "
                     "Please try again with a shorter query."
                 ),
                 model=self.model,
@@ -233,12 +238,12 @@ class GeminiLLMService(BaseLLMProvider):
             )
 
         except APIConnectionError as e:
-            logger.error("Could not connect to Gemini API: %s", e)
+            logger.error("Could not connect to LLM API endpoint: %s", e)
 
             return LLMResponse(
                 content=(
-                    "Could not connect to the Gemini API. "
-                    "Please check your network connection."
+                    "Could not connect to the model API provider. "
+                    "Please check your network connection and API base URL."
                 ),
                 model=self.model,
                 is_success=False,
@@ -248,14 +253,14 @@ class GeminiLLMService(BaseLLMProvider):
 
         except APIStatusError as e:
             logger.error(
-                "Gemini API returned status %s: %s",
+                "LLM API returned status %s: %s",
                 e.status_code,
                 e.message,
             )
 
             return LLMResponse(
                 content=(
-                    f"Gemini API error ({e.status_code}). "
+                    f"Model API returned error ({e.status_code}): {e.message}. "
                     "Check the backend logs for details."
                 ),
                 model=self.model,
@@ -265,12 +270,12 @@ class GeminiLLMService(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.exception("Unexpected error in Gemini LLM service.")
+            logger.exception("Unexpected error in Qwen LLM service.")
 
             return LLMResponse(
                 content=(
                     "An unexpected error occurred while "
-                    "communicating with the Gemini service."
+                    "communicating with the LLM service."
                 ),
                 model=self.model,
                 is_success=False,
@@ -279,6 +284,10 @@ class GeminiLLMService(BaseLLMProvider):
             )
 
 
+# Backward-compatibility alias
+GeminiLLMService = QwenLLMService
+
+
 def get_llm_service() -> BaseLLMProvider:
-    """Return the configured Gemini provider."""
-    return GeminiLLMService()
+    """Return the configured Qwen provider."""
+    return QwenLLMService()

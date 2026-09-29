@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: visual-risk-backend
     runtime: python
@@ -13,8 +13,10 @@
         value: production
       - key: DATABASE_URL
         sync: false
-      - key: GEMINI_API_KEY
+      - key: HF_TOKEN
         sync: false
+      - key: LLM_MODEL
+        value: "Qwen/Qwen3-Next-80B-A3B-Instruct"
       - key: CORS_ORIGINS
         sync: false
       - key: DEV_AUTO_LOGIN

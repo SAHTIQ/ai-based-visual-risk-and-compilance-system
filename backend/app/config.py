@@ -26,7 +26,17 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
 
-    # Gemini API
+    # LLM Settings (Qwen/Qwen3-Next-80B-A3B-Instruct via Hugging Face Router or OpenAI-compatible endpoint)
+    LLM_MODEL: str = "Qwen/Qwen3-Next-80B-A3B-Instruct"
+    LLM_BASE_URL: str = "https://router.huggingface.co/v1"
+    LLM_API_KEY: str = ""
+    LLM_TIMEOUT_SECONDS: float = 60.0
+
+    # Hugging Face Token aliases
+    HF_TOKEN: str = ""
+    HUGGINGFACE_API_KEY: str = ""
+
+    # Legacy / Fallback configuration
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_BASE_URL: str = (
@@ -43,6 +53,28 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def active_llm_api_key(self) -> str:
+        """Resolve active LLM API key with preference for HF / Qwen keys."""
+        hf_key = (self.HF_TOKEN or self.HUGGINGFACE_API_KEY or self.LLM_API_KEY or "").strip()
+        if hf_key:
+            return hf_key
+        if "gemini" in (self.LLM_MODEL or "").lower():
+            return (self.GEMINI_API_KEY or "").strip()
+        return ""
+
+    @property
+    def active_llm_model(self) -> str:
+        """Resolve active LLM model."""
+        return self.LLM_MODEL or "Qwen/Qwen3-Next-80B-A3B-Instruct"
+
+    @property
+    def active_llm_base_url(self) -> str:
+        """Resolve base URL for LLM router."""
+        if "gemini" in (self.active_llm_model or "").lower() and self.GEMINI_API_KEY and not (self.HF_TOKEN or self.HUGGINGFACE_API_KEY or self.LLM_API_KEY):
+            return self.GEMINI_BASE_URL
+        return self.LLM_BASE_URL or "https://router.huggingface.co/v1"
 
     @property
     def is_dev_auto_login_allowed(self) -> bool:

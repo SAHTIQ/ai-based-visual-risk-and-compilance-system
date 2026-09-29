@@ -55,8 +55,8 @@ Deploy the **AI-Based Visual Risk and Compliance Intelligence System** into prod
    | :--- | :--- | :--- |
    | `ENV` | `production` | Enables production security flags |
    | `DATABASE_URL` | *(Paste your Neon connection string from Step 1)* | Auto-normalized to `postgresql+psycopg://` |
-   | `GEMINI_API_KEY` | *(Paste your Google Gemini API key)* | Needed for AI Assistant & Simulation |
-   | `GEMINI_MODEL` | `gemini-2.5-flash` | Ultra-fast, cost-free/generous quota model |
+   | `HF_TOKEN` | *(Paste your Hugging Face Access Token)* | Free token from huggingface.co/settings/tokens |
+   | `LLM_MODEL` | `Qwen/Qwen3-Next-80B-A3B-Instruct` | Qwen3-Next flagship instruction model |
    | `DEV_AUTO_LOGIN` | `false` | Disables local dev mock auto-login |
    | `COOKIE_SECURE` | `true` | Enforces HTTPS-only secure cookies |
    | `COOKIE_SAMESITE` | `none` | Enables cross-origin cookies between Vercel & Render |
