@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -55,17 +55,17 @@ export const Register: React.FC = () => {
             <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center mb-6">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/70">Visual Risk & Compliance Intelligence</p>
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/70">Analytics & ML</p>
             <h1 className="text-4xl font-bold mt-3 leading-tight">
-              Start your compliance & risk intelligence journey.
+              Understand your habits. Measure your progress.
             </h1>
             <p className="text-sm text-white/75 mt-5 max-w-md leading-6">
-              Create an account to monitor workplace visual safety, automate audit trails, track habits, and model scenarios.
+              Track work sessions, study, habits and financial activity in one private personal analytics workspace.
             </p>
           </div>
           <div className="space-y-3 text-sm text-white/80">
-            <div className="flex items-center gap-3"><Sparkles className="w-4 h-4" /> AI-driven computer vision risk analytics</div>
-            <div className="flex items-center gap-3"><ShieldCheck className="w-4 h-4" /> Strict tenant isolation & encrypted credentials</div>
+            <div className="flex items-center gap-3"><Sparkles className="w-4 h-4" /> Simple, explainable analytics</div>
+            <div className="flex items-center gap-3"><ShieldCheck className="w-4 h-4" /> User-specific data protection</div>
           </div>
         </section>
 

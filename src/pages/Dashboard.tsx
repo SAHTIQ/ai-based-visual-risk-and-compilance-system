@@ -23,7 +23,6 @@ import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
-import { VisualRiskSection } from '../components/dashboard/VisualRiskSection';
 import type { ProductivityAnalytics, SimulationResponse } from '../types';
 
 interface ChatBubble {
@@ -728,9 +727,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Visual Risk & Compliance Intelligence Section */}
-      <VisualRiskSection />
 
       {/* Main Content Grid: 8 cols (Charts & Simulation) + 4 cols (AI Assistant & Recommendations) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
