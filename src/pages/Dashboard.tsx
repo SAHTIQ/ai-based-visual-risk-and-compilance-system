@@ -194,18 +194,57 @@ export const Dashboard: React.FC = () => {
   // 1. Process Real Financial Data (Overview & Breakdown)
   // =========================================================================
   const realIncome = useMemo(() => {
+    if (financialRecords.length > 0) {
+      const months = new Set(financialRecords.map((r) => r.date?.substring(0, 7)).filter(Boolean));
+      const totalInc = financialRecords.reduce((acc, r) => acc + (r.income || 0), 0);
+      if (months.size > 1) {
+        const sortedMonths = Array.from(months).sort();
+        const latestMonth = sortedMonths[sortedMonths.length - 1];
+        const activeMonthInc = financialRecords
+          .filter((r) => r.date?.startsWith(latestMonth))
+          .reduce((acc, r) => acc + (r.income || 0), 0);
+        return activeMonthInc > 0 ? activeMonthInc : Math.round(totalInc / months.size);
+      }
+      return totalInc;
+    }
     if (finAnalytics?.total_income !== undefined) return finAnalytics.total_income;
-    return financialRecords.reduce((acc, r) => acc + (r.income || 0), 0);
+    return 0;
   }, [finAnalytics, financialRecords]);
 
   const realExpenses = useMemo(() => {
+    if (financialRecords.length > 0) {
+      const months = new Set(financialRecords.map((r) => r.date?.substring(0, 7)).filter(Boolean));
+      const totalExp = financialRecords.reduce((acc, r) => acc + (r.expenses || 0), 0);
+      if (months.size > 1) {
+        const sortedMonths = Array.from(months).sort();
+        const latestMonth = sortedMonths[sortedMonths.length - 1];
+        const activeMonthExp = financialRecords
+          .filter((r) => r.date?.startsWith(latestMonth))
+          .reduce((acc, r) => acc + (r.expenses || 0), 0);
+        return activeMonthExp > 0 ? activeMonthExp : Math.round(totalExp / months.size);
+      }
+      return totalExp;
+    }
     if (finAnalytics?.total_expenses !== undefined) return finAnalytics.total_expenses;
-    return financialRecords.reduce((acc, r) => acc + (r.expenses || 0), 0);
+    return 0;
   }, [finAnalytics, financialRecords]);
 
   const realSavings = useMemo(() => {
+    if (financialRecords.length > 0) {
+      const months = new Set(financialRecords.map((r) => r.date?.substring(0, 7)).filter(Boolean));
+      const totalSav = financialRecords.reduce((acc, r) => acc + (r.savings || 0), 0);
+      if (months.size > 1) {
+        const sortedMonths = Array.from(months).sort();
+        const latestMonth = sortedMonths[sortedMonths.length - 1];
+        const activeMonthSav = financialRecords
+          .filter((r) => r.date?.startsWith(latestMonth))
+          .reduce((acc, r) => acc + (r.savings || 0), 0);
+        return activeMonthSav > 0 ? activeMonthSav : Math.round(totalSav / months.size);
+      }
+      return totalSav;
+    }
     if (finAnalytics?.total_savings !== undefined) return finAnalytics.total_savings;
-    return financialRecords.reduce((acc, r) => acc + (r.savings || 0), 0);
+    return 0;
   }, [finAnalytics, financialRecords]);
 
   // Real Expenses Breakdown by Category (matching UI reference with percentages on slices)
@@ -213,7 +252,15 @@ export const Dashboard: React.FC = () => {
     const rawCategoryTotals: Record<string, number> = {};
     let total = 0;
 
-    financialRecords.forEach((r) => {
+    const months = new Set(financialRecords.map((r) => r.date?.substring(0, 7)).filter(Boolean));
+    const sortedMonths = Array.from(months).sort();
+    const latestMonth = sortedMonths.length > 1 ? sortedMonths[sortedMonths.length - 1] : null;
+
+    const recordsToUse = latestMonth
+      ? financialRecords.filter((r) => r.date?.startsWith(latestMonth))
+      : financialRecords;
+
+    recordsToUse.forEach((r) => {
       const exp = Number(r.expenses) || 0;
       if (exp > 0) {
         total += exp;
@@ -323,32 +370,42 @@ export const Dashboard: React.FC = () => {
 
   // Aggregate monthly hours strictly from real data
   const realMonthlyStudy = useMemo(() => {
-    const monthMap: Record<string, number> = {};
+    const monthMap: Record<string, { month: string; hours: number }> = {};
 
     // First try study records
     if (studyRecords.length > 0) {
       studyRecords.forEach((r) => {
         if (!r.date) return;
         const d = new Date(r.date);
+        const sortKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const mKey = d.toLocaleString('default', { month: 'short' });
-        monthMap[mKey] = (monthMap[mKey] || 0) + (r.studyHours || 0);
+        if (!monthMap[sortKey]) {
+          monthMap[sortKey] = { month: mKey, hours: 0 };
+        }
+        monthMap[sortKey].hours += (r.studyHours || 0);
       });
     } else if (workSessions.length > 0) {
       // Fallback to real completed work sessions
       workSessions.forEach((s) => {
         if (!s.started_at) return;
         const d = new Date(s.started_at);
+        const sortKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const mKey = d.toLocaleString('default', { month: 'short' });
-        monthMap[mKey] = (monthMap[mKey] || 0) + (s.duration_minutes || 0) / 60;
+        if (!monthMap[sortKey]) {
+          monthMap[sortKey] = { month: mKey, hours: 0 };
+        }
+        monthMap[sortKey].hours += (s.duration_minutes || 0) / 60;
       });
     }
 
-    const entries = Object.entries(monthMap).map(([m, hrs]) => ({
-      month: m,
-      hours: Math.round(hrs * 10) / 10,
-    }));
+    const sorted = Object.entries(monthMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([_, val]) => ({
+        month: val.month,
+        hours: Math.round(val.hours * 10) / 10,
+      }));
 
-    return entries;
+    return sorted.slice(-6);
   }, [studyRecords, workSessions]);
 
   // Course / Activity breakdown for Subject tab
@@ -390,14 +447,28 @@ export const Dashboard: React.FC = () => {
   // Monthly completed habits from database
   const monthlyHabitsData = useMemo(() => {
     if (habits.length === 0) return [];
-    const monthCounts: Record<string, number> = {};
+    const monthCounts: Record<string, { month: string; count: number }> = {};
     habits.forEach((h) => {
       if (!h.date) return;
       const d = new Date(h.date);
+      const sortKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const mKey = d.toLocaleString('default', { month: 'short' });
-      monthCounts[mKey] = (monthCounts[mKey] || 0) + (h.status === 'Completed' ? 1 : 0);
+      if (!monthCounts[sortKey]) {
+        monthCounts[sortKey] = { month: mKey, count: 0 };
+      }
+      if (h.status === 'Completed') {
+        monthCounts[sortKey].count += 1;
+      }
     });
-    return Object.entries(monthCounts).map(([month, count]) => ({ month, count }));
+
+    const sorted = Object.entries(monthCounts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([_, val]) => ({
+        month: val.month,
+        count: val.count,
+      }));
+
+    return sorted.slice(-6);
   }, [habits]);
 
   // =========================================================================
@@ -629,15 +700,15 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Top 5 Metric Cards (Real Processed DB Data) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* 1. Monthly Income */}
-        <div className="rounded-2xl border border-emerald-100/80 dark:border-emerald-950/40 bg-white dark:bg-slate-900/90 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
-            <Wallet className="w-6 h-6" />
+        <div className="rounded-2xl border border-emerald-100/80 dark:border-emerald-950/40 bg-white dark:bg-slate-900/90 p-3.5 sm:p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition min-w-0 overflow-hidden">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+            <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Monthly Income</p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Monthly Income</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
               ₹{Math.round(realIncome).toLocaleString('en-IN')}
             </h3>
             {finAnalytics?.income_trend && finAnalytics.income_trend !== 'stable' ? (
@@ -652,13 +723,13 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* 2. Monthly Expenses */}
-        <div className="rounded-2xl border border-rose-100/80 dark:border-rose-950/40 bg-white dark:bg-slate-900/90 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center shrink-0 text-rose-500 dark:text-rose-400">
-            <CreditCard className="w-6 h-6" />
+        <div className="rounded-2xl border border-rose-100/80 dark:border-rose-950/40 bg-white dark:bg-slate-900/90 p-3.5 sm:p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition min-w-0 overflow-hidden">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center shrink-0 text-rose-500 dark:text-rose-400">
+            <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Monthly Expenses</p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Monthly Expenses</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
               ₹{Math.round(realExpenses).toLocaleString('en-IN')}
             </h3>
             {finAnalytics?.expense_trend && finAnalytics.expense_trend !== 'stable' ? (
@@ -675,13 +746,13 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* 3. Monthly Savings */}
-        <div className="rounded-2xl border border-blue-100/80 dark:border-blue-950/40 bg-white dark:bg-slate-900/90 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
-            <PiggyBank className="w-6 h-6" />
+        <div className="rounded-2xl border border-blue-100/80 dark:border-blue-950/40 bg-white dark:bg-slate-900/90 p-3.5 sm:p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition min-w-0 overflow-hidden">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
+            <PiggyBank className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Monthly Savings</p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Monthly Savings</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
               ₹{Math.round(realSavings).toLocaleString('en-IN')}
             </h3>
             {finAnalytics?.savings_rate_pct !== undefined ? (
@@ -696,32 +767,32 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* 4. Study Hours */}
-        <div className="rounded-2xl border border-purple-100/80 dark:border-purple-950/40 bg-white dark:bg-slate-900/90 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
-            <BarChart3 className="w-6 h-6" />
+        <div className="rounded-2xl border border-purple-100/80 dark:border-purple-950/40 bg-white dark:bg-slate-900/90 p-3.5 sm:p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition min-w-0 overflow-hidden">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Study / Focus Hours</p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Study / Focus</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
               {realStudyHours} hrs
             </h3>
-            <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-0.5 mt-0.5">
+            <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-0.5 mt-0.5 truncate">
               <span>{studyRecords.length > 0 ? `${studyRecords.length} sessions` : `${workSessions.length} logs`}</span>
             </p>
           </div>
         </div>
 
         {/* 5. Fitness / Productivity Score */}
-        <div className="rounded-2xl border border-amber-100/80 dark:border-amber-950/40 bg-white dark:bg-slate-900/90 p-4 shadow-sm flex items-center gap-3.5 hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
-            <Footprints className="w-6 h-6" />
+        <div className="rounded-2xl border border-amber-100/80 dark:border-amber-950/40 bg-white dark:bg-slate-900/90 p-3.5 sm:p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition min-w-0 overflow-hidden">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
+            <Footprints className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Productivity Score</p>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Productivity Score</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5 truncate">
               {realFitnessScore} / 100
             </h3>
-            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 mt-0.5">
+            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 mt-0.5 truncate">
               <span>{prodAnalytics?.consistency_pct ? `${Math.round(prodAnalytics.consistency_pct)}% active` : `${habits.length} habits`}</span>
             </p>
           </div>
@@ -735,7 +806,7 @@ export const Dashboard: React.FC = () => {
           {/* Row 1: Savings Projection + Monthly Expenses Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* 1. Savings Projection */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between min-w-0 overflow-hidden">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -883,7 +954,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* 2. Monthly Expenses Breakdown (Fixes Font Overlap & Uses Real DB Data) */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between min-w-0 overflow-hidden">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">
                   Monthly Expenses Breakdown
@@ -997,7 +1068,7 @@ export const Dashboard: React.FC = () => {
           {/* Row 2: Study & Productivity + Fitness & Health Tracking */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* 3. Study & Productivity */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm min-w-0 overflow-hidden">
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">
                 Study & Productivity
               </h3>
@@ -1053,7 +1124,7 @@ export const Dashboard: React.FC = () => {
                             <span>0</span>
                           </div>
 
-                          <div className="ml-8 h-36 flex items-end justify-around gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
+                          <div className="ml-8 h-36 flex items-end justify-around gap-1.5 sm:gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
                             {realMonthlyStudy.map((item, idx) => {
                               const heightPercent = Math.min(100, Math.round((item.hours / maxHr) * 100));
                               const isHovered = hoveredStudyMonth === idx;
@@ -1061,16 +1132,16 @@ export const Dashboard: React.FC = () => {
                               return (
                                 <div
                                   key={item.month}
-                                  className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer"
+                                  className="flex-1 min-w-0 flex flex-col items-center h-full justify-end group cursor-pointer"
                                   onMouseEnter={() => setHoveredStudyMonth(idx)}
                                   onMouseLeave={() => setHoveredStudyMonth(null)}
                                 >
-                                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1 opacity-0 group-hover:opacity-100 transition">
+                                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1 opacity-0 group-hover:opacity-100 transition truncate max-w-full">
                                     {item.hours}h
                                   </span>
                                   <div
                                     style={{ height: `${heightPercent}%` }}
-                                    className={`w-full max-w-[28px] rounded-t-sm transition-all duration-200 ${
+                                    className={`w-full max-w-[22px] rounded-t-sm transition-all duration-200 ${
                                       isHovered
                                         ? 'bg-blue-600'
                                         : 'bg-blue-500/80 dark:bg-blue-500/70 group-hover:bg-blue-600'
@@ -1083,7 +1154,7 @@ export const Dashboard: React.FC = () => {
 
                           <div className="ml-8 flex justify-around text-[10px] text-slate-400 pt-1.5">
                             {realMonthlyStudy.map((item) => (
-                              <span key={item.month} className="flex-1 text-center font-medium">
+                              <span key={item.month} className="flex-1 min-w-0 text-center font-medium truncate">
                                 {item.month}
                               </span>
                             ))}
@@ -1145,7 +1216,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* 4. Fitness & Health Tracking (Habits Data) */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm min-w-0 overflow-hidden">
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">
                 Fitness & Habit Tracking
               </h3>
@@ -1251,7 +1322,7 @@ export const Dashboard: React.FC = () => {
           {/* Row 3: Goal Progress + Future Simulation */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* 5. Goal Progress (Strictly from real DB goals/habits) */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm min-w-0 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">Goal Progress</h3>
                 <button
@@ -1300,7 +1371,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* 6. Future Simulation (Real DB Baseline & Simulation) */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm min-w-0 overflow-hidden">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   Future Simulation
