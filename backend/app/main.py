@@ -83,10 +83,15 @@ def on_startup():
         conn.execute(text("ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS frequency VARCHAR(100) NOT NULL DEFAULT 'Daily'"))
         conn.execute(text("ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
         conn.execute(text("ALTER TABLE financial_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
+        conn.execute(text("ALTER TABLE risk_detections ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
+        conn.execute(text("ALTER TABLE work_sessions ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
         conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(50)"))
         conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS location VARCHAR(255)"))
         conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS bio VARCHAR(2000)"))
         conn.execute(text("ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS theme VARCHAR(20) NOT NULL DEFAULT 'system'"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user'"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_key VARCHAR(50)"))
+        conn.execute(text("ALTER TABLE users ALTER COLUMN user_key TYPE VARCHAR(50)"))
 
     # Auto-seed initial test user if database is completely empty
     db = SessionLocal()
