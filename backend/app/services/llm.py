@@ -113,7 +113,7 @@ class UnifiedLLMService(BaseLLMProvider):
         self.base_url = settings.active_llm_base_url
         self.timeout = getattr(settings, "LLM_TIMEOUT_SECONDS", 45.0)
 
-        self._client: Optional[OpenAI] = None
+        self._client: Any = None
 
         if (
             HAS_OPENAI
