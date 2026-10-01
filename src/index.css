@@ -91,7 +91,7 @@
 
 @layer components {
   .page-wrap {
-    @apply w-full max-w-[1120px] mx-auto space-y-6;
+    @apply w-full space-y-6;
   }
 
   .page-title {

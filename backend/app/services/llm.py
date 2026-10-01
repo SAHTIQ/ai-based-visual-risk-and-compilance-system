@@ -197,7 +197,12 @@ class UnifiedLLMService(BaseLLMProvider):
 
         configured_max = getattr(settings, "LLM_MAX_OUTPUT_TOKENS", 800)
         if max_tokens is None:
-            max_tokens = configured_max if is_complex else min(500, configured_max)
+            if action == "explain_detailed":
+                max_tokens = configured_max
+            elif is_complex:
+                max_tokens = min(350, configured_max)
+            else:
+                max_tokens = min(220, configured_max)
         else:
             max_tokens = min(max_tokens, configured_max)
 
@@ -277,8 +282,12 @@ class UnifiedLLMService(BaseLLMProvider):
         # 2. Token and temperature limits
         configured_max = getattr(settings, "LLM_MAX_OUTPUT_TOKENS", 800)
         if max_tokens is None:
-            # Conservative output for normal conversational requests, higher for complex
-            max_tokens = configured_max if is_complex else min(500, configured_max)
+            if action == "explain_detailed":
+                max_tokens = configured_max
+            elif is_complex:
+                max_tokens = min(350, configured_max)
+            else:
+                max_tokens = min(220, configured_max)
         else:
             max_tokens = min(max_tokens, configured_max)
 
@@ -298,13 +307,6 @@ class UnifiedLLMService(BaseLLMProvider):
                 "LLM credentials not configured or client initialization failed for provider '%s'.",
                 self.provider,
             )
-            if is_greeting:
-                return LLMResponse(
-                    content="Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you with your productivity, habits, or routine today?",
-                    model=target_model,
-                    is_success=True,
-                    is_configured=False,
-                )
             return LLMResponse(
                 content=USER_FRIENDLY_UNAVAILABLE_MSG,
                 model=target_model,

@@ -388,7 +388,7 @@ export const Simulation: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 w-full pb-12">
       {/* Header */}
       <PageHeader
         title="Future Simulation & What-If Planner"
