@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -284,6 +285,7 @@ function ScenarioCard({ scenario, type }: { scenario: SimulationScenario; type: 
 }
 
 export const Simulation: React.FC = () => {
+  const navigate = useNavigate();
   const [result, setResult] = useState<SimulationResponse | null>(null);
   const [baseline, setBaseline] = useState<BaselineMetrics | null>(null);
   const [history, setHistory] = useState<SimulationHistoryItem[]>([]);
@@ -391,6 +393,21 @@ export const Simulation: React.FC = () => {
       <PageHeader
         title="Future Simulation & What-If Planner"
         description="See how small changes in your study habits, sleep, spending, and exercise shape your future wellbeing and savings in simple, easy-to-understand terms."
+        actions={
+          <button
+            onClick={() =>
+              navigate('/ai-assistant', {
+                state: {
+                  prompt: `Explain my latest future routine simulation (${horizonDays}-day horizon, Expected outcome: ${result?.scenarios.expected.summary.outcome || 'Routine maintained'}). What are the key tradeoff factors and recommendations?`,
+                },
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI about this</span>
+          </button>
+        }
       />
 
       {/* Dataset & Baseline Status Bar */}

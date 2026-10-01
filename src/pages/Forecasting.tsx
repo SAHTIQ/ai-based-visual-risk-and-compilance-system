@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { Card } from '../components/common/Card';
@@ -12,6 +13,7 @@ import {
   TrendingUp,
   Minus,
   Wallet,
+  Sparkles,
 } from 'lucide-react';
 import type { MetricForecast } from '../types';
 
@@ -175,6 +177,7 @@ function Chart({
 }
 
 export const Forecasting: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useApp();
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('productivity');
   const [period, setPeriod] = useState<Period>('daily');
@@ -235,6 +238,21 @@ export const Forecasting: React.FC = () => {
       <PageHeader
         title="Predictive Forecasting"
         description="Historical performance and next-period prediction"
+        actions={
+          <button
+            onClick={() =>
+              navigate('/ai-assistant', {
+                state: {
+                  prompt: `Explain my latest predictive forecast for ${metricTitle(selectedMetric)} (${period} outlook, predicted value: ${formatValue(forecast?.predicted_value, selectedMetric)}, trend: ${forecast?.trend || 'stable'}). What factors are influencing this forecast?`,
+                },
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI about this</span>
+          </button>
+        }
       />
 
       <div className="flex flex-col gap-3">

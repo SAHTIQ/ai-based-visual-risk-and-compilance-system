@@ -1,83 +1,104 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Bot,
-  Plus,
-  Send,
-  Trash2,
-  Copy,
-  Check,
-  Sparkles,
-  Loader2,
-  Clock,
-  ExternalLink,
-  Info,
-  Activity,
-  TrendingUp,
-  Cpu,
-} from 'lucide-react';
-import { PageHeader } from '../components/layout/PageHeader';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { api } from '../services/api';
-import type { Conversation, ConversationDetail, ChatMessage } from '../types';
+import type { Conversation, ConversationDetail, ChatMessage, InlineCardsData } from '../types';
 import { useApp } from '../context/AppContext';
-import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
+import { ChatSidebar } from '../components/chat/ChatSidebar';
+import { ChatHeader } from '../components/chat/ChatHeader';
+import { ChatComposer } from '../components/chat/ChatComposer';
+import { ChatMessageItem } from '../components/chat/ChatMessageItem';
+import { ChatContextPanel } from '../components/chat/ChatContextPanel';
+import { ChatEmptyState } from '../components/chat/ChatEmptyState';
+import { InlineCards } from '../components/chat/InlineCards';
 
-interface SuggestionItem {
-  category: string;
-  question: string;
-}
-
-interface ChatSuggestionsMeta {
-  categories: string[];
-  suggestions: SuggestionItem[];
-}
-
-const DEFAULT_SUGGESTIONS: SuggestionItem[] = [
-  { category: 'PRODUCTIVITY', question: 'Summarize my recent productivity and activity patterns.' },
-  { category: 'HABITS', question: 'What habits are affecting my productivity the most?' },
-  { category: 'PRODUCTIVITY', question: 'How has my productivity changed over the past few weeks?' },
-  { category: 'FORECASTS', question: 'What does my recent behaviour suggest about my future productivity?' },
-  { category: 'FORECASTS', question: 'Explain my latest forecast and the factors influencing it.' },
-  { category: 'STUDY & WORK', question: 'What are the main patterns in my study and work sessions?' },
-  { category: 'SIMULATIONS', question: 'What does my latest simulation indicate about my future routine?' },
-  { category: 'LIFESTYLE', question: 'Give me practical recommendations based on my recent activity.' },
-];
+const SAVED_INSIGHTS_KEY = 'user_saved_insights_v1';
 
 export const AIAssistant: React.FC = () => {
   const { showToast } = useApp();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Conversations state
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [activeConversation, setActiveConversation] = useState<ConversationDetail | null>(null);
-  const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [copiedMsgId, setCopiedMsgId] = useState<number | null>(null);
-  const [readinessMeta, setReadinessMeta] = useState<any>(null);
-  const [suggestionsMeta, setSuggestionsMeta] = useState<ChatSuggestionsMeta | null>(null);
+
+  // Streaming & Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [streamingContent, setStreamingContent] = useState<string>('');
+  const [streamingCards, setStreamingCards] = useState<InlineCardsData | null>(null);
+
+  // Panels & UI State
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileContextOpen, setIsMobileContextOpen] = useState(false);
+  const [selectedModelTier, setSelectedModelTier] = useState<string>('auto');
+
+  // Metadata & Context
+  const [activeSourcesUsed, setActiveSourcesUsed] = useState<string[]>([]);
+  const [activeDataSummary, setActiveDataSummary] = useState<Record<string, any> | null>(null);
+  const [suggestionsMeta, setSuggestionsMeta] = useState<{ categories: string[]; suggestions: any[] } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Saved Insights
+  const [savedInsights, setSavedInsights] = useState<Array<{ id: string; text: string; date: string }>>(() => {
+    try {
+      const stored = localStorage.getItem(SAVED_INSIGHTS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Load conversations and dynamic context metadata on mount
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 60);
+  };
+
+  // Load initial data
   useEffect(() => {
     loadConversations();
-    api.getAIReadiness().then(setReadinessMeta).catch(() => {});
     api
       .getChatSuggestions()
-      .then((data) => setSuggestionsMeta(data))
+      .then(setSuggestionsMeta)
       .catch(() => {
         setSuggestionsMeta({
           categories: ['PRODUCTIVITY', 'HABITS', 'FORECASTS', 'STUDY & WORK', 'SIMULATIONS', 'LIFESTYLE'],
-          suggestions: DEFAULT_SUGGESTIONS,
+          suggestions: [
+            { category: 'PRODUCTIVITY', question: 'Summarize my recent productivity and activity patterns.' },
+            { category: 'HABITS', question: 'What habits are affecting my productivity the most?' },
+            { category: 'FORECASTS', question: 'Explain my latest forecast and the factors influencing it.' },
+            { category: 'SIMULATIONS', question: 'What does my latest simulation indicate about my future routine?' },
+            { category: 'STUDY & WORK', question: 'What are the main patterns in my study and work sessions?' },
+            { category: 'LIFESTYLE', question: 'Give me practical recommendations based on my recent activity.' },
+          ],
         });
       });
   }, []);
 
+  // Handle incoming contextual prompt from other pages ("Ask AI about this")
+  useEffect(() => {
+    const navState = location.state as { prompt?: string; initialPrompt?: string } | null;
+    const promptToSend = navState?.prompt || navState?.initialPrompt;
+
+    if (promptToSend) {
+      // Clear location state so refresh doesn't re-trigger
+      navigate(location.pathname, { replace: true, state: {} });
+      handleSendPrompt(promptToSend);
+    }
+  }, [location.state]);
+
   const loadConversations = async (selectId?: number) => {
-    setIsLoading(true);
     try {
-      const list = await api.getConversations();
+      const list = await api.getConversations(true);
       setConversations(list);
+
       if (selectId) {
         setActiveConvId(selectId);
         await loadConversationDetail(selectId);
@@ -90,8 +111,6 @@ export const AIAssistant: React.FC = () => {
       }
     } catch {
       showToast('Could not load conversations', 'error');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -99,42 +118,47 @@ export const AIAssistant: React.FC = () => {
     try {
       const detail = await api.getConversationDetail(convId);
       setActiveConversation(detail);
+
+      // Extract sources & summary from latest assistant message metadata if available
+      const lastAsst = [...detail.messages].reverse().find((m) => m.sender === 'assistant');
+      if (lastAsst?.metadata_json) {
+        try {
+          const parsed = JSON.parse(lastAsst.metadata_json);
+          if (parsed.sources_used) setActiveSourcesUsed(parsed.sources_used);
+          if (parsed.data_summary) setActiveDataSummary(parsed.data_summary);
+        } catch {}
+      }
       scrollToBottom();
     } catch {
       showToast('Failed to load conversation history', 'error');
     }
   };
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 80);
-  };
-
   const handleSelectConversation = async (convId: number) => {
     if (convId === activeConvId) return;
+    if (isGenerating) handleStopGeneration();
     setActiveConvId(convId);
     await loadConversationDetail(convId);
   };
 
   const handleNewChat = async () => {
+    if (isGenerating) handleStopGeneration();
     try {
-      const created = await api.createConversation('New Conversation');
+      const created = await api.createConversation('New Chat');
       await loadConversations(created.id);
       showToast('Started new conversation', 'success');
-      textareaRef.current?.focus();
     } catch {
       showToast('Failed to start new conversation', 'error');
     }
   };
 
-  const handleDeleteConversation = async (e: React.MouseEvent, convId: number) => {
-    e.stopPropagation();
+  const handleDeleteConversation = async (convId: number) => {
     try {
       await api.deleteConversation(convId);
       showToast('Conversation deleted', 'info');
       const remaining = conversations.filter((c) => c.id !== convId);
       setConversations(remaining);
+
       if (activeConvId === convId) {
         if (remaining.length > 0) {
           setActiveConvId(remaining[0].id);
@@ -149,29 +173,94 @@ export const AIAssistant: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (textToSend?: string) => {
-    const messageContent = (textToSend || inputText).trim();
-    if (!messageContent || isSending) return;
+  const handleRenameConversation = async (convId: number, newTitle: string) => {
+    try {
+      const updated = await api.updateConversation(convId, { title: newTitle });
+      setConversations((prev) => prev.map((c) => (c.id === convId ? updated : c)));
+      if (activeConversation && activeConversation.id === convId) {
+        setActiveConversation((prev) => (prev ? { ...prev, title: newTitle } : null));
+      }
+      showToast('Conversation renamed', 'success');
+    } catch {
+      showToast('Failed to rename conversation', 'error');
+    }
+  };
 
-    setInputText('');
-    setIsSending(true);
+  const handleTogglePin = async (convId: number, currentPinned: boolean) => {
+    try {
+      const updated = await api.updateConversation(convId, { is_pinned: !currentPinned });
+      setConversations((prev) =>
+        prev
+          .map((c) => (c.id === convId ? updated : c))
+          .sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0))
+      );
+      showToast(updated.is_pinned ? 'Conversation pinned' : 'Conversation unpinned', 'info');
+    } catch {
+      showToast('Failed to update pin status', 'error');
+    }
+  };
+
+  const handleToggleArchive = async (convId: number, currentArchived: boolean) => {
+    try {
+      const updated = await api.updateConversation(convId, { is_archived: !currentArchived });
+      setConversations((prev) => prev.map((c) => (c.id === convId ? updated : c)));
+      showToast(updated.is_archived ? 'Conversation archived' : 'Conversation unarchived', 'info');
+    } catch {
+      showToast('Failed to update archive status', 'error');
+    }
+  };
+
+  const handleExportConversation = async (convId: number, format: 'markdown' | 'json') => {
+    try {
+      const data = await api.exportConversation(convId, format);
+      const filename = `${(data.title || 'chat').replace(/[^a-z0-9_-]/gi, '_')}.${format === 'json' ? 'json' : 'md'}`;
+      const blob = new Blob([format === 'json' ? JSON.stringify(data, null, 2) : data.markdown], {
+        type: format === 'json' ? 'application/json' : 'text/markdown',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Exported conversation as ${format.toUpperCase()}`, 'success');
+    } catch {
+      showToast('Failed to export conversation', 'error');
+    }
+  };
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+    setGenerationStatus('');
+  };
+
+  const handleSendPrompt = async (promptText: string, actionModifier?: string) => {
+    const content = promptText.trim();
+    if (!content || isGenerating) return;
 
     let targetConvId = activeConvId;
 
     try {
-      // If no active conversation exists, create one first
+      // 1. Ensure conversation exists
       if (!targetConvId) {
-        const newConv = await api.createConversation(messageContent.slice(0, 40));
+        const newConv = await api.createConversation('New Chat');
         targetConvId = newConv.id;
         setActiveConvId(newConv.id);
+        setConversations((prev) => [newConv, ...prev]);
       }
 
-      // Optimistically add user message to UI
+      // Optimistic user message
       const optimisticUserMsg: ChatMessage = {
         id: Date.now(),
         conversation_id: targetConvId,
         sender: 'user',
-        content: messageContent,
+        content,
         created_at: new Date().toISOString(),
       };
 
@@ -180,7 +269,7 @@ export const AIAssistant: React.FC = () => {
           return {
             id: targetConvId!,
             user_id: 0,
-            title: messageContent.slice(0, 40),
+            title: content.slice(0, 30),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             messages: [optimisticUserMsg],
@@ -191,326 +280,235 @@ export const AIAssistant: React.FC = () => {
           messages: [...prev.messages, optimisticUserMsg],
         };
       });
+
       scrollToBottom();
 
-      const response = await api.sendChatMessage(targetConvId, messageContent);
+      // Setup streaming state
+      setIsGenerating(true);
+      setGenerationStatus('Analyzing your data...');
+      setStreamingContent('');
+      setStreamingCards(null);
 
-      // Refresh full conversation detail from backend for verified consistency
-      await loadConversationDetail(targetConvId);
-      // Refresh list to show updated timestamps / message count
-      const updatedList = await api.getConversations();
-      setConversations(updatedList);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
-      if (!response.is_success) {
-        showToast('AI service is temporarily unavailable. Please try again later.', 'info');
-      }
-    } catch (err: any) {
-      showToast('AI service is temporarily unavailable. Please try again later.', 'error');
-    } finally {
-      setIsSending(false);
-      scrollToBottom();
+      let accumulatedText = '';
+
+      await api.streamChatMessage(
+        targetConvId,
+        content,
+        {
+          onStatus: (status) => {
+            setGenerationStatus(status);
+          },
+          onMeta: (meta) => {
+            if (meta.sources_used) setActiveSourcesUsed(meta.sources_used);
+            if (meta.data_summary) setActiveDataSummary(meta.data_summary);
+            if (meta.inline_cards) setStreamingCards(meta.inline_cards);
+          },
+          onChunk: (chunk) => {
+            accumulatedText += chunk;
+            setStreamingContent(accumulatedText);
+            scrollToBottom();
+          },
+          onDone: async () => {
+            setIsGenerating(false);
+            setGenerationStatus('');
+            setStreamingContent('');
+            setStreamingCards(null);
+            await loadConversationDetail(targetConvId!);
+            const updatedList = await api.getConversations(true);
+            setConversations(updatedList);
+          },
+          onError: () => {
+            setIsGenerating(false);
+            setGenerationStatus('');
+            showToast('AI service is temporarily unavailable. Please try again.', 'error');
+          },
+        },
+        abortController.signal,
+        actionModifier,
+        selectedModelTier
+      );
+    } catch {
+      setIsGenerating(false);
+      setGenerationStatus('');
+      showToast('AI service is temporarily unavailable. Please try again.', 'error');
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  const handleMessageAction = (action: 'explain_simply' | 'explain_detailed' | 'make_shorter' | 'make_bullets') => {
+    if (!activeConversation || activeConversation.messages.length === 0) return;
+    const lastUserMessage = [...activeConversation.messages].reverse().find((m) => m.sender === 'user');
+    const query = lastUserMessage?.content || 'Explain my data';
+
+    const actionPrompts = {
+      explain_simply: 'Can you explain the previous answer in simple, intuitive terms without technical jargon?',
+      explain_detailed: 'Can you provide an in-depth, rigorous breakdown with detailed underlying factors?',
+      make_shorter: 'Can you summarize the key takeaway into 2-3 concise sentences?',
+      make_bullets: 'Can you format the key insights as crisp, high-signal bullet points?',
+    };
+
+    handleSendPrompt(actionPrompts[action] || query, action);
+  };
+
+  const handleRegenerate = () => {
+    if (!activeConversation || activeConversation.messages.length === 0) return;
+    const lastUserMessage = [...activeConversation.messages].reverse().find((m) => m.sender === 'user');
+    if (lastUserMessage) {
+      handleSendPrompt(lastUserMessage.content);
     }
   };
 
-  const handleCopyMessage = (msgId: number, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedMsgId(msgId);
-    showToast('Copied to clipboard', 'info');
-    setTimeout(() => setCopiedMsgId(null), 2000);
+  const handleSaveInsight = (text: string) => {
+    const newInsight = {
+      id: `ins-${Date.now()}`,
+      text: text.slice(0, 240),
+      date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }),
+    };
+    const updated = [newInsight, ...savedInsights].slice(0, 20);
+    setSavedInsights(updated);
+    try {
+      localStorage.setItem(SAVED_INSIGHTS_KEY, JSON.stringify(updated));
+    } catch {}
+    showToast('Saved insight to Your Data panel', 'success');
   };
 
-  // Filter suggested questions based on selected category and availability
-  const activeSuggestions = (suggestionsMeta?.suggestions || DEFAULT_SUGGESTIONS).filter((item) => {
-    if (selectedCategory === 'ALL') return true;
-    return item.category.toUpperCase() === selectedCategory.toUpperCase();
-  });
+  const handleRemoveSavedInsight = (id: string) => {
+    const updated = savedInsights.filter((i) => i.id !== id);
+    setSavedInsights(updated);
+    try {
+      localStorage.setItem(SAVED_INSIGHTS_KEY, JSON.stringify(updated));
+    } catch {}
+    showToast('Removed insight', 'info');
+  };
 
-  const availableCategories = ['ALL', ...(suggestionsMeta?.categories || ['PRODUCTIVITY', 'HABITS', 'FORECASTS', 'STUDY & WORK', 'SIMULATIONS', 'LIFESTYLE'])];
+  const activeTitle = activeConversation?.title || 'Personal Intelligence Assistant';
+  const hasMessages = !!(activeConversation && activeConversation.messages.length > 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <PageHeader
-          title="AI Productivity & Lifestyle Assistant"
-          description="Understand your productivity, habits, behaviour, lifestyle patterns, forecasts, and simulations using your personal data."
+    <div className="flex-1 flex w-full h-full min-h-0 gap-3 overflow-hidden">
+      {/* 1. Left Sidebar: Conversations */}
+      <ChatSidebar
+        conversations={conversations}
+        activeConvId={activeConvId}
+        onSelectConversation={handleSelectConversation}
+        onNewChat={handleNewChat}
+        onDeleteConversation={handleDeleteConversation}
+        onRenameConversation={handleRenameConversation}
+        onTogglePin={handleTogglePin}
+        onToggleArchive={handleToggleArchive}
+        onExportConversation={handleExportConversation}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
+
+      {/* 2. Center: Main Chat Workspace */}
+      <div className="flex-1 flex flex-col h-full bg-surface border border-border rounded-xl overflow-hidden shadow-xs min-w-0">
+        {/* Chat Header */}
+        <ChatHeader
+          activeTitle={activeTitle}
+          hasMessages={hasMessages}
+          onNewChat={handleNewChat}
+          isRightPanelOpen={isRightPanelOpen}
+          onToggleRightPanel={() => setIsRightPanelOpen(!isRightPanelOpen)}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          onOpenMobileContext={() => setIsMobileContextOpen(true)}
+          selectedModelTier={selectedModelTier}
+          onSelectModelTier={setSelectedModelTier}
+          sourcesCount={activeSourcesUsed.length}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Database Connected</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-            <Activity className="w-3 h-3" />
-            <span>Analytics Ready</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-            <TrendingUp className="w-3 h-3" />
-            <span>Forecasting Ready</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-            <Cpu className="w-3 h-3" />
-            <span>Simulation Ready</span>
-          </div>
-          <div
-            title={readinessMeta?.rag_retrieval?.description || 'RAG architecture ready for productivity and lifestyle documents'}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-          >
-            <Info className="w-3 h-3" />
-            <span>RAG Ready</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-190px)] min-h-[550px]">
-        {/* Left Column: Conversations Sidebar */}
-        <div className="lg:col-span-1 bg-surface rounded-card border border-border flex flex-col overflow-hidden">
-          <div className="p-3 border-b border-border flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-              Conversations ({conversations.length})
-            </h3>
-            <button
-              onClick={handleNewChat}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-button bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New Chat</span>
-            </button>
-          </div>
+        {/* Messages Viewport */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {!hasMessages ? (
+            <ChatEmptyState
+              categories={suggestionsMeta?.categories || ['PRODUCTIVITY', 'HABITS', 'FORECASTS', 'STUDY & WORK', 'SIMULATIONS', 'LIFESTYLE']}
+              suggestions={suggestionsMeta?.suggestions || []}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              onSelectPrompt={handleSendPrompt}
+            />
+          ) : (
+            <>
+              {activeConversation.messages.map((msg, index) => {
+                const isLatestAsst =
+                  msg.sender === 'assistant' &&
+                  index === activeConversation.messages.length - 1 &&
+                  !isGenerating;
 
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {isLoading && conversations.length === 0 ? (
-              <div className="flex items-center justify-center p-8 text-xs text-text-secondary">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Loading conversations...
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="text-center p-6 text-xs text-text-secondary">
-                <Bot className="w-8 h-8 mx-auto mb-2 text-text-secondary/60" />
-                <p>No conversations yet.</p>
-                <p className="mt-1 text-[11px]">Click &quot;New Chat&quot; to start an analysis session.</p>
-              </div>
-            ) : (
-              conversations.map((conv) => {
-                const isActive = conv.id === activeConvId;
                 return (
-                  <div
-                    key={conv.id}
-                    onClick={() => handleSelectConversation(conv.id)}
-                    className={`group relative flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition-colors ${
-                      isActive
-                        ? 'bg-primary-light text-primary font-medium border border-primary/20'
-                        : 'text-text-primary hover:bg-muted'
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1 pr-2">
-                      <p className="truncate">{conv.title}</p>
-                      <div className="flex items-center gap-2 mt-1 text-[10px] text-text-secondary">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(conv.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
-                        <span>· {conv.message_count} msgs</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => handleDeleteConversation(e, conv.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-status-danger-bg hover:text-status-danger text-text-secondary transition-opacity"
-                      title="Delete conversation"
-                      aria-label="Delete conversation"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Right Columns: Main Chat Area */}
-        <div className="lg:col-span-3 bg-surface rounded-card border border-border flex flex-col overflow-hidden">
-          {/* Conversation Header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light text-primary shrink-0">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-text-primary truncate">
-                  {activeConversation?.title || 'New Conversation'}
-                </h2>
-                <p className="text-[11px] text-text-secondary">
-                  Personal Intelligence Assistant · Strict user-data isolation
-                </p>
-              </div>
-            </div>
-            {activeConversation && activeConversation.messages.length > 0 && (
-              <button
-                onClick={handleNewChat}
-                className="text-xs text-primary hover:underline font-medium shrink-0"
-              >
-                Start New Thread
-              </button>
-            )}
-          </div>
-
-          {/* Messages Viewport */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {!activeConversation || activeConversation.messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center py-6 px-2">
-                <div className="p-3.5 rounded-2xl bg-primary-light text-primary mb-3 shadow-inner">
-                  <Sparkles className="w-8 h-8" />
-                </div>
-                <h3 className="text-base font-semibold text-text-primary">
-                  Personal Intelligence Assistant
-                </h3>
-                <p className="mt-1 text-xs text-text-secondary max-w-md">
-                  Ask questions about your productivity, habits, behaviour, lifestyle patterns, financial activity, forecasts, and future simulations.
-                </p>
-
-                {/* Category Filter Chips */}
-                <div className="mt-5 w-full">
-                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-3">
-                    {availableCategories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider transition-colors ${
-                          selectedCategory === cat
-                            ? 'bg-primary text-white shadow-xs'
-                            : 'bg-muted text-text-secondary hover:text-text-primary hover:bg-muted/80'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="space-y-1.5 text-left">
-                    {activeSuggestions.slice(0, 6).map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSendMessage(item.question)}
-                        className="w-full text-left p-2.5 rounded-lg text-xs bg-muted hover:bg-primary-light/40 hover:text-primary border border-border transition-colors flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-2 min-w-0 pr-2">
-                          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary">
-                            {item.category}
-                          </span>
-                          <span className="truncate text-text-primary group-hover:text-primary">{item.question}</span>
-                        </div>
-                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-primary transition-opacity shrink-0 ml-1" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              activeConversation.messages.map((msg) => {
-                const isUser = msg.sender === 'user';
-                return (
-                  <div
+                  <ChatMessageItem
                     key={msg.id}
-                    className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
-                  >
-                    {!isUser && (
-                      <div className="w-7 h-7 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-4 h-4" />
-                      </div>
-                    )}
-                    <div
-                      className={`group relative max-w-[82%] rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
-                        isUser
-                          ? 'bg-primary text-white rounded-br-none shadow-sm'
-                          : 'bg-muted text-text-primary rounded-bl-none border border-border'
-                      }`}
-                    >
-                      <MarkdownRenderer content={msg.content} isUser={isUser} />
+                    message={msg}
+                    onCopy={(content) => {
+                      navigator.clipboard.writeText(content);
+                      showToast('Copied to clipboard', 'info');
+                    }}
+                    onRegenerate={isLatestAsst ? handleRegenerate : undefined}
+                    onAction={handleMessageAction}
+                    onSaveInsight={handleSaveInsight}
+                    isLatestAssistant={isLatestAsst}
+                  />
+                );
+              })}
 
-                      <div
-                        className={`flex items-center justify-between gap-3 mt-1.5 pt-1 text-[10px] ${
-                          isUser ? 'text-white/70 border-t border-white/10' : 'text-text-secondary border-t border-border'
-                        }`}
-                      >
-                        <span>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {!isUser && (
-                          <button
-                            onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className="inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
-                            title="Copy response"
-                          >
-                            {copiedMsgId === msg.id ? (
-                              <>
-                                <Check className="w-3 h-3 text-status-success" />
-                                <span className="text-status-success">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+              {/* Streaming In-Progress Assistant Bubble */}
+              {isGenerating && (
+                <div className="flex items-start gap-3 py-2">
+                  <div className="w-8 h-8 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0 mt-0.5 border border-primary/20 shadow-xs">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                  <div className="flex flex-col min-w-0 max-w-[85%] sm:max-w-[78%]">
+                    <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-surface text-text-primary rounded-tl-xs border border-border shadow-2xs space-y-2">
+                      {/* Operational Status Information */}
+                      <div className="flex items-center gap-2 text-text-secondary font-medium pb-1.5 border-b border-border/50 text-[11px]">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                        <span>{generationStatus || 'Analyzing your data...'}</span>
                       </div>
+
+                      {/* Streamed text as it arrives */}
+                      {streamingContent ? (
+                        <div className="whitespace-pre-wrap">{streamingContent}</div>
+                      ) : (
+                        <p className="text-text-secondary italic">
+                          Synthesizing personalized analytics and predictive insights...
+                        </p>
+                      )}
+
+                      {streamingCards && <InlineCards cards={streamingCards} />}
                     </div>
                   </div>
-                );
-              })
-            )}
-
-            {isSending && (
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4" />
                 </div>
-                <div className="bg-muted text-text-primary rounded-xl rounded-bl-none border border-border px-3.5 py-2.5 text-xs flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span>Synthesizing personal records, forecasts, and habit patterns...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+            </>
+          )}
 
-          {/* Input Area */}
-          <div className="p-3 border-t border-border bg-surface">
-            <div className="relative flex items-end gap-2 bg-muted rounded-xl border border-border p-2 focus-within:border-primary transition-colors">
-              <textarea
-                ref={textareaRef}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about your productivity, habits, behaviour, forecasts, or simulations... (Press Enter to send)"
-                rows={2}
-                disabled={isSending}
-                className="flex-1 bg-transparent text-xs text-text-primary placeholder:text-text-secondary outline-none resize-none px-1"
-              />
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={!inputText.trim() || isSending}
-                className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary-hover disabled:opacity-40 disabled:hover:bg-primary transition-colors"
-                aria-label="Send message"
-              >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </div>
-            <p className="mt-1 text-[10px] text-center text-text-secondary">
-              Responses are grounded in verified personal database records. Insufficient evidence is explicitly flagged.
-            </p>
-          </div>
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Chat Composer */}
+        <ChatComposer
+          onSendMessage={(content) => handleSendPrompt(content)}
+          onStopGeneration={handleStopGeneration}
+          isGenerating={isGenerating}
+          onToggleContext={() => setIsRightPanelOpen(!isRightPanelOpen)}
+        />
       </div>
+
+      {/* 3. Right Panel: Collapsible Data & Insights */}
+      {isRightPanelOpen && (
+        <ChatContextPanel
+          isOpen={isRightPanelOpen}
+          onClose={() => setIsRightPanelOpen(false)}
+          sourcesUsed={activeSourcesUsed}
+          dataSummary={activeDataSummary}
+          savedInsights={savedInsights}
+          onRemoveSavedInsight={handleRemoveSavedInsight}
+          isMobileOpen={isMobileContextOpen}
+          onCloseMobile={() => setIsMobileContextOpen(false)}
+        />
+      )}
     </div>
   );
 };

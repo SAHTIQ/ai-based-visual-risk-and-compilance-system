@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 class ChatMessageCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=5000)
+    action: Optional[str] = None  # "explain_simply" | "explain_detailed" | "make_shorter" | "make_bullets" | "regenerate"
+    model_tier: Optional[str] = None  # "auto" | "fast" | "strong"
 
 
 class ChatMessageOut(BaseModel):
@@ -23,10 +25,18 @@ class ConversationCreate(BaseModel):
     title: Optional[str] = "New Conversation"
 
 
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+    is_pinned: Optional[bool] = None
+    is_archived: Optional[bool] = None
+
+
 class ConversationOut(BaseModel):
     id: int
     user_id: int
     title: str
+    is_pinned: bool = False
+    is_archived: bool = False
     created_at: datetime
     updated_at: datetime
     message_count: int = 0
@@ -40,6 +50,8 @@ class ConversationDetailOut(BaseModel):
     id: int
     user_id: int
     title: str
+    is_pinned: bool = False
+    is_archived: bool = False
     created_at: datetime
     updated_at: datetime
     messages: List[ChatMessageOut] = Field(default_factory=list)
@@ -56,6 +68,9 @@ class ChatResponseOut(BaseModel):
     is_configured: bool = True
     error_message: Optional[str] = None
     readiness: Optional[Dict[str, Any]] = None
+    sources_used: Optional[List[str]] = None
+    inline_cards: Optional[Dict[str, Any]] = None
+    data_summary: Optional[Dict[str, Any]] = None
 
 
 class SuggestionItem(BaseModel):
@@ -66,3 +81,4 @@ class SuggestionItem(BaseModel):
 class ChatSuggestionsOut(BaseModel):
     categories: List[str]
     suggestions: List[SuggestionItem]
+

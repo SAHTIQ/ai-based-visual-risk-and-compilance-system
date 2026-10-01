@@ -171,6 +171,87 @@ class UnifiedLLMService(BaseLLMProvider):
             return self.primary_model
         return self.fast_model
 
+    def generate_stream(
+        self,
+        messages: List[Dict[str, str]],
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        is_complex: Optional[bool] = None,
+        override_model: Optional[str] = None,
+        action: Optional[str] = None,
+    ):
+        """
+        Yields tokens in real-time as they stream from the LLM provider.
+        """
+        last_user_query = ""
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                last_user_query = m.get("content", "")
+                break
+
+        if is_complex is None:
+            is_complex = self.classify_query_complexity(last_user_query, len(messages))
+
+        target_model = self.select_model(is_complex, override_model)
+
+        configured_max = getattr(settings, "LLM_MAX_OUTPUT_TOKENS", 800)
+        if max_tokens is None:
+            max_tokens = configured_max if is_complex else min(500, configured_max)
+        else:
+            max_tokens = min(max_tokens, configured_max)
+
+        if temperature is None:
+            temperature = getattr(settings, "LLM_TEMPERATURE", 0.3)
+
+        is_greeting = bool(re.search(r"^(hi|hello|hey|heya|howdy|yo|sup|greetings|good (morning|afternoon|evening))\b", last_user_query.lower().strip()))
+
+        if not self.is_available():
+            if is_greeting:
+                yield "Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you with your productivity, habits, or routine today?"
+            else:
+                yield USER_FRIENDLY_UNAVAILABLE_MSG
+            return
+
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ("system", "user", "assistant"):
+                full_messages.append({"role": role, "content": content})
+
+        if action == "explain_simply":
+            full_messages.append({"role": "user", "content": "Please explain the above answer in simple, intuitive terms suitable for anyone without technical jargon."})
+        elif action == "explain_detailed":
+            full_messages.append({"role": "user", "content": "Please provide an in-depth, rigorous breakdown with detailed factors and background mechanics."})
+        elif action == "make_shorter":
+            full_messages.append({"role": "user", "content": "Please summarize the response into a concise 2-3 sentence overview."})
+        elif action == "make_bullets":
+            full_messages.append({"role": "user", "content": "Please format the response into clear, high-signal bullet points."})
+
+        try:
+            stream = self._client.chat.completions.create(
+                model=target_model,
+                messages=full_messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stream=True,
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta:
+                    text_delta = chunk.choices[0].delta.content or ""
+                    if text_delta:
+                        yield text_delta
+        except Exception as e:
+            logger.exception("Error during LLM streaming: %s", e)
+            if is_greeting:
+                yield "Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you today?"
+            else:
+                yield "\n\nAI service is temporarily unavailable. Please try again."
+
     def generate(
         self,
         messages: List[Dict[str, str]],
@@ -178,6 +259,8 @@ class UnifiedLLMService(BaseLLMProvider):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         is_complex: Optional[bool] = None,
+        override_model: Optional[str] = None,
+        action: Optional[str] = None,
     ) -> LLMResponse:
         # 1. Determine complexity and model
         last_user_query = ""
@@ -189,7 +272,7 @@ class UnifiedLLMService(BaseLLMProvider):
         if is_complex is None:
             is_complex = self.classify_query_complexity(last_user_query, len(messages))
 
-        target_model = self.select_model(is_complex)
+        target_model = self.select_model(is_complex, override_model)
 
         # 2. Token and temperature limits
         configured_max = getattr(settings, "LLM_MAX_OUTPUT_TOKENS", 800)
@@ -203,11 +286,25 @@ class UnifiedLLMService(BaseLLMProvider):
             temperature = getattr(settings, "LLM_TEMPERATURE", 0.3)
 
         # 3. Check client readiness
+        last_user_query = ""
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                last_user_query = m.get("content", "")
+                break
+        is_greeting = bool(re.search(r"^(hi|hello|hey|heya|howdy|yo|sup|greetings|good (morning|afternoon|evening))\b", last_user_query.lower().strip()))
+
         if not self.is_available():
             logger.warning(
                 "LLM credentials not configured or client initialization failed for provider '%s'.",
                 self.provider,
             )
+            if is_greeting:
+                return LLMResponse(
+                    content="Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you with your productivity, habits, or routine today?",
+                    model=target_model,
+                    is_success=True,
+                    is_configured=False,
+                )
             return LLMResponse(
                 content=USER_FRIENDLY_UNAVAILABLE_MSG,
                 model=target_model,
@@ -226,6 +323,15 @@ class UnifiedLLMService(BaseLLMProvider):
             content = msg.get("content", "")
             if role in ("system", "user", "assistant"):
                 full_messages.append({"role": role, "content": content})
+
+        if action == "explain_simply":
+            full_messages.append({"role": "user", "content": "Please explain the above answer in simple, intuitive terms suitable for anyone without technical jargon."})
+        elif action == "explain_detailed":
+            full_messages.append({"role": "user", "content": "Please provide an in-depth, rigorous breakdown with detailed factors and background mechanics."})
+        elif action == "make_shorter":
+            full_messages.append({"role": "user", "content": "Please summarize the response into a concise 2-3 sentence overview."})
+        elif action == "make_bullets":
+            full_messages.append({"role": "user", "content": "Please format the response into clear, high-signal bullet points."})
 
         start_time = time.time()
 
@@ -297,6 +403,13 @@ class UnifiedLLMService(BaseLLMProvider):
 
         except APIStatusError as e:
             logger.error("LLM API returned status %s: %s", e.status_code, e.message)
+            if is_greeting:
+                return LLMResponse(
+                    content="Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you with your productivity, habits, or routine today?",
+                    model=target_model,
+                    is_success=True,
+                    is_configured=True,
+                )
             return LLMResponse(
                 content=USER_FRIENDLY_UNAVAILABLE_MSG,
                 model=target_model,
@@ -307,6 +420,13 @@ class UnifiedLLMService(BaseLLMProvider):
 
         except Exception as e:
             logger.exception("Unexpected error in LLM service.")
+            if is_greeting:
+                return LLMResponse(
+                    content="Hello! 👋 I'm your Personal Intelligence Assistant. How can I help you today?",
+                    model=target_model,
+                    is_success=True,
+                    is_configured=True,
+                )
             return LLMResponse(
                 content=USER_FRIENDLY_UNAVAILABLE_MSG,
                 model=target_model,

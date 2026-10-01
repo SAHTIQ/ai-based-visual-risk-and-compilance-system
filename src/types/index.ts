@@ -460,6 +460,8 @@ export interface Conversation {
   id: number;
   user_id: number;
   title: string;
+  is_pinned?: boolean;
+  is_archived?: boolean;
   created_at: string;
   updated_at: string;
   message_count: number;
@@ -470,9 +472,66 @@ export interface ConversationDetail {
   id: number;
   user_id: number;
   title: string;
+  is_pinned?: boolean;
+  is_archived?: boolean;
   created_at: string;
   updated_at: string;
   messages: ChatMessage[];
+}
+
+export interface InlineCardsData {
+  productivity?: {
+    type: 'productivity';
+    score: number;
+    change_pct: string;
+    consistency: string;
+    focus_hours: string;
+    peak_hours: string;
+  };
+  habit?: {
+    type: 'habit';
+    habit_name: string;
+    completion_rate: string;
+    current_streak: string;
+    trend: string;
+  };
+  study?: {
+    type: 'study';
+    recent_hours: string;
+    records_count: number;
+  };
+  financial?: {
+    type: 'financial';
+    savings_rate: string;
+    budget_usage: string;
+  };
+  forecast?: {
+    type: 'forecast';
+    metric: string;
+    current_value: number;
+    forecast_value: number;
+    trend: string;
+    confidence: string;
+    factors: string[];
+    view_url: string;
+  };
+  simulation?: {
+    type: 'simulation';
+    scenario: string;
+    current_state: string;
+    simulated_outcome: string;
+    difference: string;
+    important_factors: string[];
+    view_url: string;
+  };
+  insight?: {
+    type: 'insight';
+    title: string;
+    observation: string;
+    why_it_matters: string;
+    relevant_data: string;
+    view_url: string;
+  };
 }
 
 export interface ChatResponse {
@@ -482,6 +541,9 @@ export interface ChatResponse {
   is_success: boolean;
   is_configured: boolean;
   error_message?: string | null;
+  sources_used?: string[] | null;
+  inline_cards?: InlineCardsData | null;
+  data_summary?: Record<string, any> | null;
   readiness?: {
     rag_retrieval?: {
       is_operational: boolean;
@@ -495,4 +557,5 @@ export interface ChatResponse {
     };
   } | null;
 }
+
 

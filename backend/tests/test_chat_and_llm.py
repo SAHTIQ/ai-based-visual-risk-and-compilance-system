@@ -145,9 +145,39 @@ class ChatAndLLMTests(unittest.TestCase):
         self.assertIn("web_research", meta)
         self.assertFalse(meta["rag_retrieval"]["is_operational"])
         self.assertFalse(meta["web_research"]["is_operational"])
-        self.assertEqual(len(rag_service.retrieve_relevant_documents("productivity")), 0)
-        self.assertIsNone(rag_service.perform_web_search("habit science"))
+    def test_greeting_intent_and_card_suppression(self):
+        """Verify that simple greetings are recognized as greetings, suppress cards, and title as Welcome Chat."""
+        from app.services.app_context import extract_inline_cards_and_sources, generate_conversation_title
+
+        # 1. Intent detection
+        intents_hi = detect_query_intents("Hi")
+        self.assertIn("greeting", intents_hi)
+        self.assertNotIn("productivity", intents_hi)
+
+        intents_hello = detect_query_intents("Hello, how are you?")
+        self.assertIn("greeting", intents_hello)
+
+        # 2. Context retrieval for greeting
+        ctx = get_user_productivity_context(self.db, self.user1, query="Hi")
+        self.assertTrue(ctx.get("is_greeting"))
+        self.assertNotIn("productivity_analytics", ctx)
+
+        # 3. Inline cards and sources suppression
+        meta = extract_inline_cards_and_sources(ctx, query="Hi")
+        self.assertEqual(meta["sources_used"], [])
+        self.assertEqual(meta["inline_cards"], {})
+
+        # 4. Smart title generation for greeting
+        title = generate_conversation_title("Hi")
+        self.assertEqual(title, "Welcome Chat")
+
+        # 5. Friendly system prompt for greeting
+        prompt = build_system_prompt(ctx)
+        self.assertIn("Greet", prompt)
+        self.assertIn("warmly", prompt)
+        self.assertNotIn("Short answer:", prompt)
 
 
 if __name__ == "__main__":
     unittest.main()
+

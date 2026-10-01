@@ -18,6 +18,7 @@ import {
   Footprints,
   Loader2,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -665,12 +666,27 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Date Selector Pill */}
-        <div className="relative self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
-            onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
+            onClick={() =>
+              navigate('/ai-assistant', {
+                state: {
+                  prompt: `Give me an overall intelligence summary of my productivity, habits, and personal data.`,
+                },
+              })
+            }
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/20 transition shadow-2xs"
           >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI Assistant</span>
+          </button>
+
+          {/* Date Selector Pill */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition"
+            >
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <span>{selectedTimeRange}</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
@@ -697,6 +713,7 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Top 5 Metric Cards (Real Processed DB Data) */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { ActiveSessionWidget } from '../components/behavior/ActiveSessionWidget';
@@ -9,10 +10,11 @@ import { SummaryCard } from '../components/common/SummaryCard';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/layout/PageHeader';
-import { Clock, Target, Award, CheckCircle } from 'lucide-react';
+import { Clock, Target, Award, CheckCircle, Sparkles } from 'lucide-react';
 import type { WorkSession, ProductivityAnalytics, WorkActivityType } from '../types';
 
 export const Productivity: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useApp();
   const [sessions, setSessions] = useState<WorkSession[]>([]);
   const [analytics, setAnalytics] = useState<ProductivityAnalytics | null>(null);
@@ -65,6 +67,21 @@ export const Productivity: React.FC = () => {
       <PageHeader
         title="Productivity & Behavior"
         description="Work sessions, focus time, and behavioral consistency"
+        actions={
+          <button
+            onClick={() =>
+              navigate('/ai-assistant', {
+                state: {
+                  prompt: `Explain my current productivity score (${analytics?.productivity_score ?? 71}) and suggest actionable steps to improve focus time.`,
+                },
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI about this</span>
+          </button>
+        }
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

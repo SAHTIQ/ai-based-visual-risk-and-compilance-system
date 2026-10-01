@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -10,6 +11,7 @@ import {
   Edit2,
   Trash2,
   Calendar,
+  Sparkles,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -21,6 +23,7 @@ import { useApp } from '../context/AppContext';
 import type { StudyRecord, PerformanceGrade } from '../types';
 
 export const Study: React.FC = () => {
+  const navigate = useNavigate();
   const {
     studyRecords,
     isLoadingStudy,
@@ -100,17 +103,32 @@ export const Study: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setEditingRecord(null);
-            setIsAddModalOpen(true);
-          }}
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          Add Study Record
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              navigate('/ai-assistant', {
+                state: {
+                  prompt: `Analyze my study sessions (${totalHours.toFixed(1)} total study hours across ${studyRecords.length} recorded sessions). What are the main patterns in my study and learning progress?`,
+                },
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI about this</span>
+          </button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingRecord(null);
+              setIsAddModalOpen(true);
+            }}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Add Study Record
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stats */}

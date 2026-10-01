@@ -92,6 +92,8 @@ def on_startup():
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user'"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_key VARCHAR(50)"))
         conn.execute(text("ALTER TABLE users ALTER COLUMN user_key TYPE VARCHAR(50)"))
+        conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT FALSE"))
+        conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE"))
 
     # Auto-seed initial test user if database is completely empty
     db = SessionLocal()

@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
+import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -14,6 +16,7 @@ from app.models.financial import FinancialRecord
 from app.models.simulation import SimulationHistory
 from app.schemas.chat import (
     ConversationCreate,
+    ConversationUpdate,
     ConversationOut,
     ConversationDetailOut,
     ChatMessageCreate,
@@ -26,6 +29,8 @@ from app.services.llm import get_llm_service
 from app.services.app_context import (
     get_user_productivity_context,
     build_system_prompt,
+    generate_conversation_title,
+    extract_inline_cards_and_sources,
 )
 from app.services.rag import rag_service
 
@@ -34,16 +39,16 @@ router = APIRouter(prefix="/api/chat", tags=["AI Productivity & Lifestyle Assist
 
 @router.get("/conversations", response_model=List[ConversationOut])
 def list_conversations(
+    include_archived: bool = True,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """List all persistent conversations belonging strictly to the authenticated user."""
-    convs = (
-        db.query(Conversation)
-        .filter(Conversation.user_id == current_user.id)
-        .order_by(Conversation.updated_at.desc())
-        .all()
-    )
+    query = db.query(Conversation).filter(Conversation.user_id == current_user.id)
+    if not include_archived:
+        query = query.filter(Conversation.is_archived.is_(False))
+
+    convs = query.order_by(Conversation.is_pinned.desc(), Conversation.updated_at.desc()).all()
     result = []
     for c in convs:
         msgs = c.messages
@@ -53,6 +58,8 @@ def list_conversations(
                 id=c.id,
                 user_id=c.user_id,
                 title=c.title,
+                is_pinned=c.is_pinned,
+                is_archived=c.is_archived,
                 created_at=c.created_at,
                 updated_at=c.updated_at,
                 message_count=len(msgs),
@@ -72,6 +79,8 @@ def create_conversation(
     conv = Conversation(
         user_id=current_user.id,
         title=payload.title or "New Conversation",
+        is_pinned=False,
+        is_archived=False,
     )
     db.add(conv)
     db.commit()
@@ -80,6 +89,8 @@ def create_conversation(
         id=conv.id,
         user_id=conv.user_id,
         title=conv.title,
+        is_pinned=conv.is_pinned,
+        is_archived=conv.is_archived,
         created_at=conv.created_at,
         updated_at=conv.updated_at,
         message_count=0,
@@ -103,6 +114,98 @@ def get_conversation_detail(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
 
     return conv
+
+
+@router.patch("/conversations/{conversation_id}", response_model=ConversationOut)
+def update_conversation(
+    conversation_id: int,
+    payload: ConversationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update conversation properties (rename title, pin/unpin, archive/unarchive)."""
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .first()
+    )
+    if not conv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
+
+    if payload.title is not None:
+        new_title = payload.title.strip()
+        if new_title:
+            conv.title = new_title[:255]
+    if payload.is_pinned is not None:
+        conv.is_pinned = payload.is_pinned
+    if payload.is_archived is not None:
+        conv.is_archived = payload.is_archived
+
+    conv.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(conv)
+
+    msgs = conv.messages
+    last_msg = msgs[-1].content[:80] + "..." if msgs else None
+
+    return ConversationOut(
+        id=conv.id,
+        user_id=conv.user_id,
+        title=conv.title,
+        is_pinned=conv.is_pinned,
+        is_archived=conv.is_archived,
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        message_count=len(msgs),
+        last_message=last_msg,
+    )
+
+
+@router.get("/conversations/{conversation_id}/export")
+def export_conversation(
+    conversation_id: int,
+    format: str = "markdown",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export conversation content as Markdown or JSON."""
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .first()
+    )
+    if not conv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
+
+    if format.lower() == "json":
+        return {
+            "title": conv.title,
+            "created_at": conv.created_at.isoformat(),
+            "updated_at": conv.updated_at.isoformat(),
+            "messages": [
+                {
+                    "sender": m.sender,
+                    "content": m.content,
+                    "created_at": m.created_at.isoformat(),
+                }
+                for m in conv.messages
+            ],
+        }
+
+    # Markdown export
+    lines = [
+        f"# {conv.title}",
+        f"*Exported from Personal Intelligence Assistant on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}*",
+        "",
+    ]
+    for m in conv.messages:
+        role = "User" if m.sender == "user" else "Personal Intelligence Assistant"
+        timestamp = m.created_at.strftime("%Y-%m-%d %H:%M")
+        lines.append(f"### {role} ({timestamp})\n")
+        lines.append(f"{m.content}\n")
+        lines.append("---\n")
+
+    return {"title": conv.title, "markdown": "\n".join(lines)}
 
 
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -156,10 +259,9 @@ def post_message_to_conversation(
     conv.updated_at = datetime.now(timezone.utc)
 
     # Auto-title conversation on first message if default
-    if conv.title in ("New Conversation", "New Chat", "New Investigation", "Dashboard Assistant"):
-        clean_title = user_query.split("\n")[0][:45]
-        if clean_title:
-            conv.title = clean_title
+    if conv.title in ("New Conversation", "New Chat", "New Investigation", "Dashboard Assistant", "New Thread"):
+        smart_title = generate_conversation_title(user_query)
+        conv.title = smart_title
 
     db.commit()
     db.refresh(user_msg)
@@ -190,16 +292,22 @@ def post_message_to_conversation(
     # 3. Retrieval-first architecture: query ONLY relevant PostgreSQL records & analytical metrics
     user_context = get_user_productivity_context(db, current_user, query=user_query)
     system_prompt = build_system_prompt(user_context, conversation_summary=conv_summary)
+    meta_info = extract_inline_cards_and_sources(user_context, query=user_query)
 
     # 4. Generate LLM response with model routing and conservative output tokens
     llm = get_llm_service()
-    llm_resp = llm.generate(messages=llm_messages, system_prompt=system_prompt)
+    llm_resp = llm.generate(
+        messages=llm_messages,
+        system_prompt=system_prompt,
+        action=payload.action,
+    )
 
     # 5. Persist assistant message
     asst_msg = ChatMessage(
         conversation_id=conv.id,
         sender="assistant",
         content=llm_resp.content,
+        metadata_json=json.dumps(meta_info) if meta_info else None,
     )
     db.add(asst_msg)
     conv.updated_at = datetime.now(timezone.utc)
@@ -214,7 +322,134 @@ def post_message_to_conversation(
         is_configured=llm_resp.is_configured,
         error_message=llm_resp.error_message,
         readiness=rag_service.get_readiness_meta(),
+        sources_used=meta_info.get("sources_used"),
+        inline_cards=meta_info.get("inline_cards"),
+        data_summary=meta_info.get("data_summary"),
     )
+
+
+@router.post("/conversations/{conversation_id}/stream")
+def stream_message_to_conversation(
+    conversation_id: int,
+    payload: ChatMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Real SSE streaming endpoint.
+    Emits real operational statuses:
+      - Analyzing your data...
+      - Retrieving relevant records...
+      - Generating response...
+    Then streams response tokens in real-time, persisting the final response.
+    """
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .first()
+    )
+    if not conv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
+
+    user_query = payload.content.strip()
+
+    # Save user message
+    user_msg = ChatMessage(
+        conversation_id=conv.id,
+        sender="user",
+        content=user_query,
+    )
+    db.add(user_msg)
+    conv.updated_at = datetime.now(timezone.utc)
+
+    if conv.title in ("New Conversation", "New Chat", "New Investigation", "Dashboard Assistant", "New Thread"):
+        conv.title = generate_conversation_title(user_query)
+
+    db.commit()
+    db.refresh(user_msg)
+
+    # Gather conversation history
+    past_messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.conversation_id == conv.id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
+
+    conv_summary: Optional[str] = None
+    if len(past_messages) > 6:
+        older = past_messages[:-6]
+        user_queries = [m.content[:50].strip() for m in older if m.sender == "user"]
+        if user_queries:
+            conv_summary = f"Earlier conversation ({len(older)} messages) covered topics: " + "; ".join(user_queries[-3:])
+        active_turn_messages = past_messages[-6:]
+    else:
+        active_turn_messages = past_messages
+
+    llm_messages = [
+        {"role": "user" if m.sender == "user" else "assistant", "content": m.content}
+        for m in active_turn_messages
+    ]
+
+    def event_generator():
+        # Status 1: Analyzing data
+        yield f"data: {json.dumps({'type': 'status', 'status': 'Analyzing your data...'})}\n\n"
+
+        # Status 2: Retrieving records
+        user_context = get_user_productivity_context(db, current_user, query=user_query)
+        system_prompt = build_system_prompt(user_context, conversation_summary=conv_summary)
+        meta_info = extract_inline_cards_and_sources(user_context, query=user_query)
+
+        yield f"data: {json.dumps({'type': 'status', 'status': 'Retrieving relevant records...'})}\n\n"
+        yield f"data: {json.dumps({'type': 'meta', 'sources_used': meta_info.get('sources_used'), 'inline_cards': meta_info.get('inline_cards'), 'data_summary': meta_info.get('data_summary')})}\n\n"
+
+        # Status 3: Generating response
+        yield f"data: {json.dumps({'type': 'status', 'status': 'Generating response...'})}\n\n"
+
+        llm = get_llm_service()
+        accumulated_chunks = []
+
+        try:
+            for chunk in llm.generate_stream(
+                messages=llm_messages,
+                system_prompt=system_prompt,
+                action=payload.action,
+            ):
+                accumulated_chunks.append(chunk)
+                yield f"data: {json.dumps({'type': 'chunk', 'text': chunk})}\n\n"
+        except Exception as e:
+            err_msg = "AI service is temporarily unavailable. Please try again."
+            accumulated_chunks.append(err_msg)
+            yield f"data: {json.dumps({'type': 'chunk', 'text': err_msg})}\n\n"
+
+        full_content = "".join(accumulated_chunks).strip()
+        if not full_content:
+            full_content = "I could not generate a response at this time. Please try again."
+
+        # Save assistant message to DB
+        asst_msg = ChatMessage(
+            conversation_id=conv.id,
+            sender="assistant",
+            content=full_content,
+            metadata_json=json.dumps(meta_info) if meta_info else None,
+        )
+        db.add(asst_msg)
+        conv.updated_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(asst_msg)
+
+        yield f"data: {json.dumps({'type': 'done', 'assistant_message': {'id': asst_msg.id, 'conversation_id': conv.id, 'sender': 'assistant', 'content': full_content, 'created_at': asst_msg.created_at.isoformat()}})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
 
 
 @router.post("/quick-ask", response_model=ChatResponseOut)

@@ -499,8 +499,8 @@ export const api = {
   },
 
   // ================= Milestone 4: AI Assistant & Persistent Chat =================
-  async getConversations(): Promise<import('../types').Conversation[]> {
-    return fetchApi<import('../types').Conversation[]>('/chat/conversations');
+  async getConversations(includeArchived: boolean = true): Promise<import('../types').Conversation[]> {
+    return fetchApi<import('../types').Conversation[]>(`/chat/conversations?include_archived=${includeArchived}`);
   },
 
   async createConversation(title?: string): Promise<import('../types').Conversation> {
@@ -514,17 +514,122 @@ export const api = {
     return fetchApi<import('../types').ConversationDetail>(`/chat/conversations/${conversationId}`);
   },
 
+  async updateConversation(
+    conversationId: number,
+    data: { title?: string; is_pinned?: boolean; is_archived?: boolean }
+  ): Promise<import('../types').Conversation> {
+    return fetchApi<import('../types').Conversation>(`/chat/conversations/${conversationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async exportConversation(
+    conversationId: number,
+    format: 'json' | 'markdown' = 'markdown'
+  ): Promise<any> {
+    return fetchApi<any>(`/chat/conversations/${conversationId}/export?format=${format}`);
+  },
+
   async deleteConversation(conversationId: number): Promise<void> {
     await fetchApi(`/chat/conversations/${conversationId}`, {
       method: 'DELETE',
     });
   },
 
-  async sendChatMessage(conversationId: number, content: string): Promise<import('../types').ChatResponse> {
+  async sendChatMessage(
+    conversationId: number,
+    content: string,
+    action?: string,
+    modelTier?: string
+  ): Promise<import('../types').ChatResponse> {
     return fetchApi<import('../types').ChatResponse>(`/chat/conversations/${conversationId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, action, model_tier: modelTier }),
     });
+  },
+
+  async streamChatMessage(
+    conversationId: number,
+    content: string,
+    callbacks: {
+      onStatus?: (status: string) => void;
+      onMeta?: (meta: any) => void;
+      onChunk?: (chunk: string) => void;
+      onDone?: (res: any) => void;
+      onError?: (err: any) => void;
+    },
+    signal?: AbortSignal,
+    action?: string,
+    modelTier?: string
+  ): Promise<void> {
+    const url = `${API_BASE_URL}/chat/conversations/${conversationId}/stream`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ content, action, model_tier: modelTier }),
+        signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('ReadableStream not supported');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const jsonStr = trimmed.slice(6);
+            try {
+              const data = JSON.parse(jsonStr);
+              if (data.type === 'status' && callbacks.onStatus) {
+                callbacks.onStatus(data.status);
+              } else if (data.type === 'meta' && callbacks.onMeta) {
+                callbacks.onMeta(data);
+              } else if (data.type === 'chunk' && callbacks.onChunk) {
+                callbacks.onChunk(data.text);
+              } else if (data.type === 'done' && callbacks.onDone) {
+                callbacks.onDone(data);
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+      if (callbacks.onError) {
+        callbacks.onError(err);
+      } else {
+        throw err;
+      }
+    }
   },
 
   async quickAskAI(content: string): Promise<import('../types').ChatResponse> {
@@ -541,6 +646,7 @@ export const api = {
   async getAIReadiness(): Promise<any> {
     return fetchApi<any>('/chat/readiness');
   },
+
 
 
 

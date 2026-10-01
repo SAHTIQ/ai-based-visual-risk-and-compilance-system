@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -10,6 +11,7 @@ import {
   Calendar,
   Edit2,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -22,6 +24,7 @@ import { useApp } from '../context/AppContext';
 import type { HabitRecord } from '../types';
 
 export const Habits: React.FC = () => {
+  const navigate = useNavigate();
   const { habits, isLoadingHabits, addHabit, updateHabit, toggleHabitStatus, deleteHabit } =
     useApp();
 
@@ -75,17 +78,32 @@ export const Habits: React.FC = () => {
         title="Habits"
         description="Completion, consistency, streaks, and habit history."
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              setEditingHabit(null);
-              setIsAddModalOpen(true);
-            }}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            Add Habit
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                navigate('/ai-assistant', {
+                  state: {
+                    prompt: `Review my current habits and streaks (${completedCount} completed, ${pendingCount} pending, max streak of ${maxStreak} days). What habits affect my daily productivity the most?`,
+                  },
+                })
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Ask AI about this</span>
+            </button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setEditingHabit(null);
+                setIsAddModalOpen(true);
+              }}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Add Habit
+            </Button>
+          </div>
         }
       />
 
