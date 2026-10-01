@@ -44,6 +44,12 @@ cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
+```
+cd D:\userProfile_simple_ml
+.\.venv\Scripts\Activate.ps1
+cd .\backend
+python -m uvicorn app.main:app --reload --port 8000
+```
 
 > **Database Configuration**:
 > Configure your PostgreSQL connection in `backend/.env` (see `.env.example`):

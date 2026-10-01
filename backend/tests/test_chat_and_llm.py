@@ -3,9 +3,15 @@ from datetime import datetime, timezone
 from app.database import SessionLocal
 from app.models.user import User
 from app.models.chat import Conversation, ChatMessage
-from app.services.llm import get_llm_service
-from app.services.app_context import get_user_risk_context, build_system_prompt
+from app.services.llm import get_llm_service, UnifiedLLMService
+from app.services.app_context import (
+    get_user_risk_context,
+    get_user_productivity_context,
+    detect_query_intents,
+    build_system_prompt,
+)
 from app.services.rag import rag_service
+from app.routers.chat import get_chat_suggestions
 
 
 class ChatAndLLMTests(unittest.TestCase):
@@ -28,7 +34,7 @@ class ChatAndLLMTests(unittest.TestCase):
         user2 = self.user2
 
         # Create conversation for user 1
-        conv1 = Conversation(user_id=user1.id, title="Unit Test Conversation")
+        conv1 = Conversation(user_id=user1.id, title="Productivity Analysis Session")
         db.add(conv1)
         db.commit()
         db.refresh(conv1)
@@ -36,12 +42,12 @@ class ChatAndLLMTests(unittest.TestCase):
         msg1 = ChatMessage(
             conversation_id=conv1.id,
             sender="user",
-            content="What is my risk status?",
+            content="Summarize my recent productivity and activity patterns.",
         )
         msg2 = ChatMessage(
             conversation_id=conv1.id,
             sender="assistant",
-            content="Your risk status is currently Low.",
+            content="Your productivity score is currently 71 with strong coding focus.",
         )
         db.add_all([msg1, msg2])
         db.commit()
@@ -62,8 +68,8 @@ class ChatAndLLMTests(unittest.TestCase):
         db.delete(conv1)
         db.commit()
 
-    def test_llm_service_unconfigured_handling(self):
-        """Verify LLM service gracefully reports setup notice when key is unconfigured without crashing."""
+    def test_llm_service_generation_and_error_shielding(self):
+        """Verify LLM service generates output or gracefully shields raw errors without crashing."""
         llm = get_llm_service()
         resp = llm.generate(
             messages=[{"role": "user", "content": "Hello"}],
@@ -73,27 +79,64 @@ class ChatAndLLMTests(unittest.TestCase):
         self.assertIn("content", resp.to_dict())
         if not llm.is_available():
             self.assertFalse(resp.is_configured)
-            self.assertIn("API key", resp.content)
+            self.assertIn("temporarily unavailable", resp.content)
 
-    def test_app_context_extraction(self):
-        """Verify user risk context extracts real records and enforces no fabrication."""
-        ctx = get_user_risk_context(self.db, self.user1)
+    def test_productivity_context_extraction(self):
+        """Verify user productivity context extracts real records and enforces no fabrication."""
+        ctx = get_user_productivity_context(self.db, self.user1, query="Summarize my productivity")
         self.assertIn("user_profile", ctx)
-        self.assertIn("risk_intelligence", ctx)
-        self.assertIn("ml_predictions", ctx)
-        self.assertIn("future_simulation", ctx)
-
-        risk_intel = ctx["risk_intelligence"]
-        self.assertIn("current_risk_status", risk_intel)
-        self.assertIn("total_detections", risk_intel)
-        self.assertIn("compliance_status", risk_intel)
-        self.assertIn("compliance_rate_pct", risk_intel)
+        self.assertIn("productivity_analytics", ctx)
+        self.assertIn("query_domains", ctx)
 
         # Build prompt
         prompt = build_system_prompt(ctx)
         self.assertIn("STRICT OPERATIONAL RULES", prompt)
         self.assertIn("Insufficient Evidence", prompt)
         self.assertIn(self.user1.name, prompt)
+        
+        # Verify instructions portion does not prescribe safety or risk compliance
+        instructions = prompt.split("STRICT OPERATIONAL RULES")[1].lower()
+        self.assertNotIn("hazard", instructions)
+        self.assertNotIn("ppe compliance", instructions)
+        self.assertNotIn("risk detection", instructions)
+
+    def test_intent_detection(self):
+        """Verify intent detection accurately extracts targeted domains."""
+        self.assertIn("habits", detect_query_intents("What habits are affecting my productivity the most?"))
+        self.assertIn("productivity", detect_query_intents("Why was my productivity lower this week?"))
+        self.assertIn("study", detect_query_intents("What are the main patterns in my study and work sessions?"))
+        self.assertIn("financial", detect_query_intents("How does my monthly spending compare with my savings goal?"))
+        self.assertIn("forecast", detect_query_intents("Explain my latest forecast and the factors influencing it."))
+        self.assertIn("simulation", detect_query_intents("What does my latest simulation indicate about my future routine?"))
+
+    def test_model_routing_complexity_classifier(self):
+        """Verify simple queries route to fast model and complex queries route to strong model."""
+        llm = UnifiedLLMService()
+        # Simple queries
+        self.assertFalse(llm.classify_query_complexity("What is my productivity score?"))
+        self.assertFalse(llm.classify_query_complexity("How many hours did I study?"))
+        self.assertFalse(llm.classify_query_complexity("Explain my habit trend"))
+        self.assertFalse(llm.classify_query_complexity("Summarize my week"))
+
+        # Complex queries
+        self.assertTrue(llm.classify_query_complexity("Compare my productivity from previous weeks with my spending correlation and future simulation trajectory."))
+        self.assertTrue(llm.classify_query_complexity("Deep dive into the tradeoff between study hours and burnout risk in my simulation."))
+
+    def test_dynamic_suggestions_endpoint(self):
+        """Verify suggested questions are dynamic, relevant, and free of risk/compliance terms."""
+        suggestions_out = get_chat_suggestions(current_user=self.user1, db=self.db)
+        self.assertTrue(len(suggestions_out.categories) > 0)
+        self.assertTrue(len(suggestions_out.suggestions) >= 2)
+        self.assertTrue(len(suggestions_out.suggestions) <= 8)
+
+        # Verify no risk/compliance terminology in suggested questions
+        for item in suggestions_out.suggestions:
+            q_lower = item.question.lower()
+            self.assertNotIn("risk", q_lower)
+            self.assertNotIn("compliance", q_lower)
+            self.assertNotIn("hazard", q_lower)
+            self.assertNotIn("ppe", q_lower)
+            self.assertNotIn("safety violation", q_lower)
 
     def test_rag_and_web_readiness_reporting(self):
         """Verify RAG and web research readiness are honestly reported as pending with zero fake citations."""
@@ -102,8 +145,8 @@ class ChatAndLLMTests(unittest.TestCase):
         self.assertIn("web_research", meta)
         self.assertFalse(meta["rag_retrieval"]["is_operational"])
         self.assertFalse(meta["web_research"]["is_operational"])
-        self.assertEqual(len(rag_service.retrieve_relevant_documents("safety")), 0)
-        self.assertIsNone(rag_service.perform_web_search("regulations"))
+        self.assertEqual(len(rag_service.retrieve_relevant_documents("productivity")), 0)
+        self.assertIsNone(rag_service.perform_web_search("habit science"))
 
 
 if __name__ == "__main__":

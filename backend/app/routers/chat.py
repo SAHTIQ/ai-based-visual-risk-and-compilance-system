@@ -7,6 +7,11 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
 from app.models.chat import Conversation, ChatMessage
+from app.models.work_session import WorkSession
+from app.models.habit import HabitRecord
+from app.models.study import StudyRecord
+from app.models.financial import FinancialRecord
+from app.models.simulation import SimulationHistory
 from app.schemas.chat import (
     ConversationCreate,
     ConversationOut,
@@ -14,12 +19,17 @@ from app.schemas.chat import (
     ChatMessageCreate,
     ChatMessageOut,
     ChatResponseOut,
+    ChatSuggestionsOut,
+    SuggestionItem,
 )
 from app.services.llm import get_llm_service
-from app.services.app_context import get_user_risk_context, build_system_prompt
+from app.services.app_context import (
+    get_user_productivity_context,
+    build_system_prompt,
+)
 from app.services.rag import rag_service
 
-router = APIRouter(prefix="/api/chat", tags=["AI Assistant & Chat"])
+router = APIRouter(prefix="/api/chat", tags=["AI Productivity & Lifestyle Assistant"])
 
 
 @router.get("/conversations", response_model=List[ConversationOut])
@@ -61,7 +71,7 @@ def create_conversation(
     """Create a new persistent conversation for the authenticated user."""
     conv = Conversation(
         user_id=current_user.id,
-        title=payload.title or "New Investigation",
+        title=payload.title or "New Conversation",
     )
     db.add(conv)
     db.commit()
@@ -123,8 +133,8 @@ def post_message_to_conversation(
     db: Session = Depends(get_db),
 ):
     """
-    Post a user message, ground response in authenticated user's records,
-    call LLM service, persist both messages, and return the response.
+    Post a user message, ground response in authenticated user's records via retrieval-first
+    architecture, call the unified LLM service, persist both messages, and return the response.
     """
     conv = (
         db.query(Conversation)
@@ -134,41 +144,54 @@ def post_message_to_conversation(
     if not conv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
 
+    user_query = payload.content.strip()
+
     # 1. Save user message
     user_msg = ChatMessage(
         conversation_id=conv.id,
         sender="user",
-        content=payload.content.strip(),
+        content=user_query,
     )
     db.add(user_msg)
     conv.updated_at = datetime.now(timezone.utc)
-    
+
     # Auto-title conversation on first message if default
-    if conv.title == "New Conversation" or conv.title == "New Chat" or conv.title == "New Investigation":
-        clean_title = payload.content.strip().split("\n")[0][:45]
+    if conv.title in ("New Conversation", "New Chat", "New Investigation", "Dashboard Assistant"):
+        clean_title = user_query.split("\n")[0][:45]
         if clean_title:
             conv.title = clean_title
 
     db.commit()
     db.refresh(user_msg)
 
-    # 2. Gather conversation history (last 10 messages for context)
+    # 2. Gather conversation history with compact summary for older turns (Chat History Optimization)
     past_messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.conversation_id == conv.id)
         .order_by(ChatMessage.created_at.asc())
         .all()
     )
+
+    conv_summary: Optional[str] = None
+    if len(past_messages) > 6:
+        older = past_messages[:-6]
+        user_queries = [m.content[:50].strip() for m in older if m.sender == "user"]
+        if user_queries:
+            conv_summary = f"Earlier conversation ({len(older)} messages) covered topics: " + "; ".join(user_queries[-3:])
+        active_turn_messages = past_messages[-6:]
+    else:
+        active_turn_messages = past_messages
+
     llm_messages = [
         {"role": "user" if m.sender == "user" else "assistant", "content": m.content}
-        for m in past_messages[-10:]
+        for m in active_turn_messages
     ]
 
-    # 3. Build system prompt grounded in actual user records
-    user_context = get_user_risk_context(db, current_user)
-    system_prompt = build_system_prompt(user_context)
+    # 3. Retrieval-first architecture: query ONLY relevant PostgreSQL records & analytical metrics
+    user_context = get_user_productivity_context(db, current_user, query=user_query)
+    system_prompt = build_system_prompt(user_context, conversation_summary=conv_summary)
 
-    # 4. Generate LLM response
+    # 4. Generate LLM response with model routing and conservative output tokens
     llm = get_llm_service()
     llm_resp = llm.generate(messages=llm_messages, system_prompt=system_prompt)
 
@@ -224,6 +247,106 @@ def quick_ask(
         payload=payload,
         current_user=current_user,
         db=db,
+    )
+
+
+@router.get("/suggestions", response_model=ChatSuggestionsOut)
+def get_chat_suggestions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Dynamically generates 6-8 suggested questions categorized by domain
+    based on the authenticated user's actual database records.
+    Never shows suggested questions for data domains with zero records.
+    """
+    user_id = current_user.id
+
+    # Check existence of records per domain
+    work_count = db.query(WorkSession).filter(WorkSession.user_id == user_id).count()
+    habit_count = db.query(HabitRecord).filter(HabitRecord.user_id == user_id).count()
+    study_count = db.query(StudyRecord).filter(StudyRecord.user_id == user_id).count()
+    fin_count = db.query(FinancialRecord).filter(FinancialRecord.user_id == user_id).count()
+    sim_count = db.query(SimulationHistory).filter(SimulationHistory.user_id == user_id).count()
+
+    categories: List[str] = []
+    suggestions: List[SuggestionItem] = []
+
+    # 1. Productivity (Base domain)
+    categories.append("PRODUCTIVITY")
+    suggestions.append(
+        SuggestionItem(
+            category="PRODUCTIVITY",
+            question="Summarize my recent productivity and activity patterns.",
+        )
+    )
+    suggestions.append(
+        SuggestionItem(
+            category="PRODUCTIVITY",
+            question="How has my productivity changed over the past few weeks?",
+        )
+    )
+
+    # 2. Habits (Only if habit records exist)
+    if habit_count > 0:
+        categories.append("HABITS")
+        suggestions.append(
+            SuggestionItem(
+                category="HABITS",
+                question="What habits are affecting my productivity the most?",
+            )
+        )
+
+    # 3. Forecasts (If enough historical work/productivity sessions exist)
+    if work_count >= 3:
+        categories.append("FORECASTS")
+        suggestions.append(
+            SuggestionItem(
+                category="FORECASTS",
+                question="What does my recent behaviour suggest about my future productivity?",
+            )
+        )
+        suggestions.append(
+            SuggestionItem(
+                category="FORECASTS",
+                question="Explain my latest forecast and the factors influencing it.",
+            )
+        )
+
+    # 4. Study & Work Sessions (Only if study records exist)
+    if study_count > 0:
+        categories.append("STUDY & WORK")
+        suggestions.append(
+            SuggestionItem(
+                category="STUDY & WORK",
+                question="What are the main patterns in my study and work sessions?",
+            )
+        )
+
+    # 5. Simulations (If simulation history exists or enough multi-domain data)
+    if sim_count > 0 or (work_count >= 2 and (habit_count > 0 or fin_count > 0)):
+        categories.append("SIMULATIONS")
+        suggestions.append(
+            SuggestionItem(
+                category="SIMULATIONS",
+                question="What does my latest simulation indicate about my future routine?",
+            )
+        )
+
+    # 6. Lifestyle / Recommendations (If financial or general activity data exists)
+    if fin_count > 0 or work_count > 0 or habit_count > 0:
+        categories.append("LIFESTYLE")
+        suggestions.append(
+            SuggestionItem(
+                category="LIFESTYLE",
+                question="Give me practical recommendations based on my recent activity.",
+            )
+        )
+
+    # Cap to 8 high-impact suggestions
+    return ChatSuggestionsOut(
+        categories=categories,
+        suggestions=suggestions[:8],
     )
 
 

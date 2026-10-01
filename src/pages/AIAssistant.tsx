@@ -6,18 +6,41 @@ import {
   Trash2,
   Copy,
   Check,
-  ShieldCheck,
   Sparkles,
   Loader2,
   Clock,
   ExternalLink,
   Info,
+  Activity,
+  TrendingUp,
+  Cpu,
 } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { api } from '../services/api';
 import type { Conversation, ConversationDetail, ChatMessage } from '../types';
 import { useApp } from '../context/AppContext';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
+
+interface SuggestionItem {
+  category: string;
+  question: string;
+}
+
+interface ChatSuggestionsMeta {
+  categories: string[];
+  suggestions: SuggestionItem[];
+}
+
+const DEFAULT_SUGGESTIONS: SuggestionItem[] = [
+  { category: 'PRODUCTIVITY', question: 'Summarize my recent productivity and activity patterns.' },
+  { category: 'HABITS', question: 'What habits are affecting my productivity the most?' },
+  { category: 'PRODUCTIVITY', question: 'How has my productivity changed over the past few weeks?' },
+  { category: 'FORECASTS', question: 'What does my recent behaviour suggest about my future productivity?' },
+  { category: 'FORECASTS', question: 'Explain my latest forecast and the factors influencing it.' },
+  { category: 'STUDY & WORK', question: 'What are the main patterns in my study and work sessions?' },
+  { category: 'SIMULATIONS', question: 'What does my latest simulation indicate about my future routine?' },
+  { category: 'LIFESTYLE', question: 'Give me practical recommendations based on my recent activity.' },
+];
 
 export const AIAssistant: React.FC = () => {
   const { showToast } = useApp();
@@ -29,22 +52,25 @@ export const AIAssistant: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<number | null>(null);
   const [readinessMeta, setReadinessMeta] = useState<any>(null);
+  const [suggestionsMeta, setSuggestionsMeta] = useState<ChatSuggestionsMeta | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const suggestedQuestions = [
-    'Explain my latest risk status and active hazards.',
-    'Why was my highest-risk detection classified as high risk?',
-    'Summarize my recent safety violations and evidence.',
-    'Explain my latest simulation results and recommendations.',
-    'What compliance area should I investigate first?',
-  ];
-
-  // Load conversations on mount
+  // Load conversations and dynamic context metadata on mount
   useEffect(() => {
     loadConversations();
     api.getAIReadiness().then(setReadinessMeta).catch(() => {});
+    api
+      .getChatSuggestions()
+      .then((data) => setSuggestionsMeta(data))
+      .catch(() => {
+        setSuggestionsMeta({
+          categories: ['PRODUCTIVITY', 'HABITS', 'FORECASTS', 'STUDY & WORK', 'SIMULATIONS', 'LIFESTYLE'],
+          suggestions: DEFAULT_SUGGESTIONS,
+        });
+      });
   }, []);
 
   const loadConversations = async (selectId?: number) => {
@@ -93,7 +119,7 @@ export const AIAssistant: React.FC = () => {
 
   const handleNewChat = async () => {
     try {
-      const created = await api.createConversation('New Investigation');
+      const created = await api.createConversation('New Conversation');
       await loadConversations(created.id);
       showToast('Started new conversation', 'success');
       textareaRef.current?.focus();
@@ -175,11 +201,11 @@ export const AIAssistant: React.FC = () => {
       const updatedList = await api.getConversations();
       setConversations(updatedList);
 
-      if (!response.is_configured) {
-        showToast('AI Provider Notice: OPENAI_API_KEY not configured in backend/.env', 'info');
+      if (!response.is_success) {
+        showToast('AI service is temporarily unavailable. Please try again later.', 'info');
       }
     } catch (err: any) {
-      showToast(err.message || 'Error communicating with assistant', 'error');
+      showToast('AI service is temporarily unavailable. Please try again later.', 'error');
     } finally {
       setIsSending(false);
       scrollToBottom();
@@ -200,30 +226,44 @@ export const AIAssistant: React.FC = () => {
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
+  // Filter suggested questions based on selected category and availability
+  const activeSuggestions = (suggestionsMeta?.suggestions || DEFAULT_SUGGESTIONS).filter((item) => {
+    if (selectedCategory === 'ALL') return true;
+    return item.category.toUpperCase() === selectedCategory.toUpperCase();
+  });
+
+  const availableCategories = ['ALL', ...(suggestionsMeta?.categories || ['PRODUCTIVITY', 'HABITS', 'FORECASTS', 'STUDY & WORK', 'SIMULATIONS', 'LIFESTYLE'])];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <PageHeader
-          title="AI Risk & Compliance Assistant"
-          description="Grounded in your real PostgreSQL risk records, visual detections, ML forecasts, and Milestone 3 simulation models."
+          title="AI Productivity & Lifestyle Assistant"
+          description="Understand your productivity, habits, behaviour, lifestyle patterns, forecasts, and simulations using your personal data."
         />
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Database Grounded</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Database Connected</span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+            <Activity className="w-3 h-3" />
+            <span>Analytics Ready</span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            <TrendingUp className="w-3 h-3" />
+            <span>Forecasting Ready</span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+            <Cpu className="w-3 h-3" />
+            <span>Simulation Ready</span>
           </div>
           <div
-            title={readinessMeta?.rag_retrieval?.description || 'RAG architecture ready for safety manual ingestion'}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+            title={readinessMeta?.rag_retrieval?.description || 'RAG architecture ready for productivity and lifestyle documents'}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
           >
-            <Info className="w-3.5 h-3.5" />
-            <span>RAG: Pending Docs</span>
-          </div>
-          <div
-            title={readinessMeta?.web_research?.description || 'Web research connector pending search API configuration'}
-            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-muted text-text-secondary border border-border"
-          >
-            <span>Web: Pending Config</span>
+            <Info className="w-3 h-3" />
+            <span>RAG Ready</span>
           </div>
         </div>
       </div>
@@ -255,7 +295,7 @@ export const AIAssistant: React.FC = () => {
               <div className="text-center p-6 text-xs text-text-secondary">
                 <Bot className="w-8 h-8 mx-auto mb-2 text-text-secondary/60" />
                 <p>No conversations yet.</p>
-                <p className="mt-1 text-[11px]">Click "New Chat" to start an investigation.</p>
+                <p className="mt-1 text-[11px]">Click &quot;New Chat&quot; to start an analysis session.</p>
               </div>
             ) : (
               conversations.map((conv) => {
@@ -305,10 +345,10 @@ export const AIAssistant: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-text-primary truncate">
-                  {activeConversation?.title || 'New Investigation'}
+                  {activeConversation?.title || 'New Conversation'}
                 </h2>
                 <p className="text-[11px] text-text-secondary">
-                  Persistent multi-turn conversation · Strict user-data isolation
+                  Personal Intelligence Assistant · Strict user-data isolation
                 </p>
               </div>
             </div>
@@ -325,32 +365,52 @@ export const AIAssistant: React.FC = () => {
           {/* Messages Viewport */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {!activeConversation || activeConversation.messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center max-w-lg mx-auto text-center py-8">
-                <div className="p-3 rounded-2xl bg-primary-light text-primary mb-3">
+              <div className="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center py-6 px-2">
+                <div className="p-3.5 rounded-2xl bg-primary-light text-primary mb-3 shadow-inner">
                   <Sparkles className="w-8 h-8" />
                 </div>
                 <h3 className="text-base font-semibold text-text-primary">
-                  Risk & Compliance Intelligence Assistant
+                  Personal Intelligence Assistant
                 </h3>
-                <p className="mt-1 text-xs text-text-secondary">
-                  Ask questions about your detected visual risks, PPE compliance rates, ML forecasting trends, and
-                  Milestone 3 simulation trajectories.
+                <p className="mt-1 text-xs text-text-secondary max-w-md">
+                  Ask questions about your productivity, habits, behaviour, lifestyle patterns, financial activity, forecasts, and future simulations.
                 </p>
 
-                <div className="mt-6 w-full space-y-2 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary px-1">
-                    Suggested Questions
-                  </p>
-                  {suggestedQuestions.map((q, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSendMessage(q)}
-                      className="w-full text-left p-2.5 rounded-lg text-xs bg-muted hover:bg-primary-light/40 hover:text-primary border border-border transition-colors flex items-center justify-between group"
-                    >
-                      <span className="truncate">{q}</span>
-                      <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-primary transition-opacity shrink-0 ml-2" />
-                    </button>
-                  ))}
+                {/* Category Filter Chips */}
+                <div className="mt-5 w-full">
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-3">
+                    {availableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider transition-colors ${
+                          selectedCategory === cat
+                            ? 'bg-primary text-white shadow-xs'
+                            : 'bg-muted text-text-secondary hover:text-text-primary hover:bg-muted/80'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1.5 text-left">
+                    {activeSuggestions.slice(0, 6).map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendMessage(item.question)}
+                        className="w-full text-left p-2.5 rounded-lg text-xs bg-muted hover:bg-primary-light/40 hover:text-primary border border-border transition-colors flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary">
+                            {item.category}
+                          </span>
+                          <span className="truncate text-text-primary group-hover:text-primary">{item.question}</span>
+                        </div>
+                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-primary transition-opacity shrink-0 ml-1" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -416,7 +476,7 @@ export const AIAssistant: React.FC = () => {
                 </div>
                 <div className="bg-muted text-text-primary rounded-xl rounded-bl-none border border-border px-3.5 py-2.5 text-xs flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span>Synthesizing risk records and model evidence...</span>
+                  <span>Synthesizing personal records, forecasts, and habit patterns...</span>
                 </div>
               </div>
             )}
@@ -431,7 +491,7 @@ export const AIAssistant: React.FC = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about detected hazards, compliance rules, simulation results... (Press Enter to send)"
+                placeholder="Ask about your productivity, habits, behaviour, forecasts, or simulations... (Press Enter to send)"
                 rows={2}
                 disabled={isSending}
                 className="flex-1 bg-transparent text-xs text-text-primary placeholder:text-text-secondary outline-none resize-none px-1"
@@ -446,7 +506,7 @@ export const AIAssistant: React.FC = () => {
               </button>
             </div>
             <p className="mt-1 text-[10px] text-center text-text-secondary">
-              Responses are grounded in verified database records. Insufficient evidence is explicitly flagged.
+              Responses are grounded in verified personal database records. Insufficient evidence is explicitly flagged.
             </p>
           </div>
         </div>

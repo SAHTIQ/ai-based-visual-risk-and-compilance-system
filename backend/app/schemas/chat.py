@@ -56,3 +56,13 @@ class ChatResponseOut(BaseModel):
     is_configured: bool = True
     error_message: Optional[str] = None
     readiness: Optional[Dict[str, Any]] = None
+
+
+class SuggestionItem(BaseModel):
+    category: str
+    question: str
+
+
+class ChatSuggestionsOut(BaseModel):
+    categories: List[str]
+    suggestions: List[SuggestionItem]

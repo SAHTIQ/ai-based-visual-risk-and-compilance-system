@@ -506,7 +506,7 @@ export const api = {
   async createConversation(title?: string): Promise<import('../types').Conversation> {
     return fetchApi<import('../types').Conversation>('/chat/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title: title || 'New Investigation' }),
+      body: JSON.stringify({ title: title || 'New Conversation' }),
     });
   },
 
@@ -532,6 +532,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ content }),
     });
+  },
+
+  async getChatSuggestions(): Promise<{ categories: string[]; suggestions: { category: string; question: string }[] }> {
+    return fetchApi<{ categories: string[]; suggestions: { category: string; question: string }[] }>('/chat/suggestions');
   },
 
   async getAIReadiness(): Promise<any> {

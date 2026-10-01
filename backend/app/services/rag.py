@@ -6,8 +6,8 @@ class RetrievalStatus(BaseModel):
     is_operational: bool = False
     status_label: str = "Pending Document Indexing"
     description: str = (
-        "RAG retrieval architecture is ready. Awaiting ingestion and embedding of compliance manuals, "
-        "safety guideline PDFs, and standard operating procedures (SOPs)."
+        "RAG retrieval architecture is ready. Awaiting ingestion and embedding of personal notes, "
+        "productivity guidelines, and lifestyle documentation."
     )
     indexed_documents_count: int = 0
 
