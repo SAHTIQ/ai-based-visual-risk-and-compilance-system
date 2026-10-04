@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
 
+    # Google Authentication
+    GOOGLE_CLIENT_ID: str = ""
+    CLIENT_ID: str = ""
+
     # LLM Provider & Model Settings
     LLM_PROVIDER: str = "auto"  # "auto", "gemini", "huggingface", "openai", "custom"
     LLM_MODEL: str = "Qwen/Qwen3-Next-80B-A3B-Instruct"
@@ -165,6 +169,16 @@ class Settings(BaseSettings):
             for origin in self.CORS_ORIGINS.split(",")
             if origin.strip()
         ]
+
+    @property
+    def active_google_client_id(self) -> str:
+        return (
+            self.GOOGLE_CLIENT_ID
+            or self.CLIENT_ID
+            or os.environ.get("GOOGLE_CLIENT_ID", "")
+            or os.environ.get("CLIENT_ID", "")
+            or os.environ.get("Client ID", "")
+        ).strip()
 
 
 settings = Settings()

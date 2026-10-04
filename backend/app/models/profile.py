@@ -23,3 +23,15 @@ class UserProfile(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="profile")
+
+    @property
+    def name(self) -> str:
+        return self.user.name if self.user else ""
+
+    @property
+    def email(self) -> str:
+        return self.user.email if self.user else ""
+
+    @property
+    def avatar_url(self) -> str | None:
+        return self.user.avatar_url if self.user else None

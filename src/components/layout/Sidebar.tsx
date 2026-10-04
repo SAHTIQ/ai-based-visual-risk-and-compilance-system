@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   User,
@@ -15,9 +15,11 @@ import {
   TrendingUp,
   Orbit,
   Bot,
+  FileText,
+  ChevronRight,
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
+import { Modal } from '../common/Modal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,8 +27,9 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { showToast } = useApp();
+  const navigate = useNavigate();
   const [simulationStatus, setSimulationStatus] = useState<'ready' | 'insufficient' | 'unavailable'>('unavailable');
+  const [showHelpChoiceModal, setShowHelpChoiceModal] = useState(false);
 
   useEffect(() => {
     api.getFutureSimulation()
@@ -49,11 +52,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/habits', label: 'Habits', icon: CheckSquare },
     { to: '/activity', label: 'Activity History', icon: History },
   ];
-
-  const handleHelpClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    showToast('Milestone 2 Documentation & Help is available in the Project Guide.', 'info');
-  };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `group flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13px] font-medium transition-colors ${
@@ -126,14 +124,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <Settings className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Settings</span>
             </NavLink>
-            <a
-              href="#help"
-              onClick={handleHelpClick}
-              className="flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-muted"
+            <button
+              type="button"
+              onClick={() => setShowHelpChoiceModal(true)}
+              className="w-full flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-muted text-left transition-colors"
             >
               <HelpCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Help & Docs</span>
-            </a>
+            </button>
           </div>
         </nav>
 
@@ -152,6 +150,79 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </aside>
+
+      {/* Choice Modal: Asks user which documentation resource to open */}
+      <Modal
+        isOpen={showHelpChoiceModal}
+        onClose={() => setShowHelpChoiceModal(false)}
+        title="Help & Documentation"
+        subtitle="Choose which documentation resource you would like to view:"
+        maxWidth="md"
+      >
+        <div className="space-y-3.5 py-1">
+          <button
+            type="button"
+            onClick={() => {
+              setShowHelpChoiceModal(false);
+              onClose();
+              navigate('/help-docs?tab=project-docs');
+            }}
+            className="w-full text-left p-4 rounded-xl border border-border bg-surface hover:border-primary/50 hover:bg-primary/5 transition-all flex items-start gap-4 group"
+          >
+            <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">
+                  Project Technical Documentation
+                </h4>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary/15 text-primary shrink-0">
+                  30 Chapters
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary mt-1 line-clamp-2 leading-relaxed">
+                Full academic report by Mohammed Sahtiq S: system design, ML models (Linear & Logistic Regression), DB ERD, and code highlights.
+              </p>
+              <div className="mt-2.5 flex items-center gap-1 text-xs font-semibold text-primary">
+                <span>Open Project Documentation</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowHelpChoiceModal(false);
+              onClose();
+              navigate('/help-docs?tab=user-manual');
+            }}
+            className="w-full text-left p-4 rounded-xl border border-border bg-surface hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all flex items-start gap-4 group"
+          >
+            <div className="w-11 h-11 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-text-primary group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Website User & Help Manual
+                </h4>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  User Guide
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary mt-1 line-clamp-2 leading-relaxed">
+                Step-by-step instructions on navigating this website: Dashboard KPIs, Work sessions, Predictive forecasting, What-If simulation, and AI Assistant.
+              </p>
+              <div className="mt-2.5 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <span>Open Website Help Manual</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </button>
+        </div>
+      </Modal>
     </>
   );
 };

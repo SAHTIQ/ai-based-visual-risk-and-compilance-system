@@ -5,6 +5,9 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  role?: string;
+  auth_provider?: string;
+  avatar_url?: string | null;
   created_at: string;
 }
 
@@ -13,8 +16,10 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithGoogle: (credential: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
+  updateUser: (updates: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -54,6 +59,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    try {
+      const loggedInUser = await api.loginWithGoogle(credential);
+      setUser(loggedInUser);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unable to sign in with Google.',
+      };
+    }
+  };
+
   const register = async (name: string, email: string, password: string) => {
     try {
       const registeredUser = await api.register({ name, email, password });
@@ -75,8 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = (updates: Partial<AuthUser>) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : null));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, loginWithGoogle, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

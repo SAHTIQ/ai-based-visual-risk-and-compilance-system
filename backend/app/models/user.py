@@ -12,9 +12,12 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(50), default="user", nullable=False, index=True)
     user_key: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
+    auth_provider: Mapped[str] = mapped_column(String(50), default="local", nullable=False, index=True)
+    google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 

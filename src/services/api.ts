@@ -78,6 +78,17 @@ export const api = {
     return res;
   },
 
+  async loginWithGoogle(credential: string) {
+    const res = await fetchApi<any>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential, id_token: credential }),
+    });
+    if (res?.token && typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, res.token);
+    }
+    return res;
+  },
+
   async getCurrentUser() {
     return fetchApi<any>('/auth/me');
   },
@@ -102,9 +113,9 @@ export const api = {
 
     return {
       id: String(profile.user_id || profile.id),
-      name: profile.name || 'User Profile',
+      name: profile.name || '',
       email: profile.email || '',
-      age: profile.age || null,
+      age: profile.age ?? null,
       gender: profile.gender || '',
       occupation: profile.occupation || '',
       education: profile.education || '',
@@ -120,6 +131,7 @@ export const api = {
     await fetchApi('/profile', {
       method: 'PUT',
       body: JSON.stringify({
+        name: updates.name,
         age: updates.age,
         gender: updates.gender,
         occupation: updates.occupation,

@@ -19,11 +19,12 @@ const PAGE_TITLES: Record<string, string> = {
   '/habits': 'Habits',
   '/activity': 'Activity History',
   '/settings': 'Settings',
+  '/help-docs': 'Help & Documentation',
 };
 
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const { profile, settings, updateSettings, activities, selectedDate, setSelectedDate } = useApp();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -31,13 +32,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const userName = profile?.name || 'Alex Morgan';
+  const userName = profile?.name || user?.name || 'Alex Morgan';
   const userInitials = userName
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'U';
 
   const recentNotifications = activities.slice(0, 4);
   const pageTitle = PAGE_TITLES[location.pathname] || 'Analytics';
@@ -219,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <div className="absolute right-0 mt-2 w-52 bg-surface rounded-lg border border-border shadow-card py-1.5 z-50">
               <div className="px-4 py-2 border-b border-border">
                 <p className="text-sm font-semibold text-text-primary">{userName}</p>
-                <p className="text-xs text-text-secondary truncate">{profile?.email}</p>
+                <p className="text-xs text-text-secondary truncate">{profile?.email || user?.email}</p>
               </div>
               <button
                 onClick={() => {

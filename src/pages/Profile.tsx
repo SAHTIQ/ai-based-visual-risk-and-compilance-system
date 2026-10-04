@@ -9,12 +9,14 @@ import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/layout/PageHeader';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import type { Gender } from '../types';
 
 const GENDER_OPTIONS: Gender[] = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
 
 export const Profile: React.FC = () => {
   const { profile, updateProfile, isLoadingProfile } = useApp();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -32,23 +34,26 @@ export const Profile: React.FC = () => {
 
   useEffect(() => {
     if (profile) {
-      setName(profile.name || '');
-      setEmail(profile.email || '');
-      setAge(profile.age || '');
+      setName(profile.name || user?.name || '');
+      setEmail(profile.email || user?.email || '');
+      setAge(profile.age ?? '');
       setGender(profile.gender || 'Prefer not to say');
       setOccupation(profile.occupation || '');
       setEducation(profile.education || '');
       setPhone(profile.phone || '');
       setLocation(profile.location || '');
       setBio(profile.bio || '');
+    } else if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const handleCancel = () => {
     if (profile) {
-      setName(profile.name || '');
-      setEmail(profile.email || '');
-      setAge(profile.age || '');
+      setName(profile.name || user?.name || '');
+      setEmail(profile.email || user?.email || '');
+      setAge(profile.age ?? '');
       setGender(profile.gender || 'Prefer not to say');
       setOccupation(profile.occupation || '');
       setEducation(profile.education || '');
@@ -63,7 +68,8 @@ export const Profile: React.FC = () => {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = 'Full Name is required';
-    if (!email.trim() || !email.includes('@')) errs.email = 'Valid email is required';
+    const emailToValidate = email.trim() || user?.email || '';
+    if (!emailToValidate || !emailToValidate.includes('@')) errs.email = 'Valid email is required';
     if (!age || Number(age) <= 0 || Number(age) > 120) errs.age = 'Valid age between 1 and 120 is required';
     if (!occupation.trim()) errs.occupation = 'Occupation is required';
     if (!education.trim()) errs.education = 'Education level is required';
@@ -78,7 +84,7 @@ export const Profile: React.FC = () => {
     setIsSaving(true);
     const success = await updateProfile({
       name: name.trim(),
-      email: email.trim(),
+      email: email.trim() || user?.email || '',
       age: Number(age),
       gender,
       occupation: occupation.trim(),
@@ -102,12 +108,14 @@ export const Profile: React.FC = () => {
     );
   }
 
-  const initials = (profile.name || 'Alex Morgan')
+  const displayName = profile.name || user?.name || 'User Profile';
+  const initials = displayName
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'U';
 
   return (
     <div className="space-y-6">

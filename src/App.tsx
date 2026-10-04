@@ -1,3 +1,4 @@
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
@@ -16,12 +17,18 @@ import { ActivityHistory } from './pages/ActivityHistory';
 import { Settings } from './pages/Settings';
 import { Simulation } from './pages/Simulation';
 import { AIAssistant } from './pages/AIAssistant';
+import { HelpDocs } from './pages/HelpDocs';
+
+const GOOGLE_CLIENT_ID =
+  (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
+  '303291914892-k30tt3k08l53vv7druketbr10tceuqcn.apps.googleusercontent.com';
 
 export function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <BrowserRouter>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -39,6 +46,7 @@ export function App() {
                 <Route path="habits" element={<Habits />} />
                 <Route path="activity" element={<ActivityHistory />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="help-docs" element={<HelpDocs />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Route>
@@ -47,6 +55,7 @@ export function App() {
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>
+  </GoogleOAuthProvider>
   );
 }
 

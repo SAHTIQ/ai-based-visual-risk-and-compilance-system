@@ -79,7 +79,7 @@ export const getLocalDateKey = (date = new Date()) => {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, updateUser } = useAuth();
   const [selectedDate, setSelectedDateState] = useState(
     () => localStorage.getItem('selected-tracking-date') || getLocalDateKey(),
   );
@@ -187,7 +187,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       };
 
-      await api.getProfile().then((v) => { if (!cancelled) setProfile(v); }).catch((e) => console.error('Profile load failed', e)).finally(() => { if (!cancelled) setIsLoadingProfile(false); });
+      await api.getProfile()
+        .then((v) => {
+          if (!cancelled) {
+            const resolvedProfile: UserProfile = {
+              ...v,
+              name: v.name || user?.name || '',
+              email: v.email || user?.email || '',
+            };
+            setProfile(resolvedProfile);
+          }
+        })
+        .catch((e) => console.error('Profile load failed', e))
+        .finally(() => { if (!cancelled) setIsLoadingProfile(false); });
+
       await Promise.all([
         load(api.getFinancialRecords, setFinancialRecords, setIsLoadingFinancial),
         load(api.getStudyRecords, setStudyRecords, setIsLoadingStudy),
@@ -199,13 +212,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     loadAll();
     return () => { cancelled = true; };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.name, user?.email]);
 
   // Profile operations
   const updateProfile = async (data: Partial<UserProfile>) => {
     try {
       const updated = await api.updateProfile(data);
-      setProfile(updated);
+      const resolvedProfile: UserProfile = {
+        ...updated,
+        name: updated.name || data.name || user?.name || '',
+        email: updated.email || user?.email || '',
+      };
+      setProfile(resolvedProfile);
+      if (resolvedProfile.name) {
+        updateUser({ name: resolvedProfile.name });
+      }
       await Promise.all([refreshActivities(), refreshDashboard()]);
       showToast('Profile information updated successfully', 'success');
       return true;

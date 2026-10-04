@@ -15,11 +15,14 @@ class ProfileCreate(ProfileBase):
     pass
 
 class ProfileUpdate(ProfileBase):
-    pass
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Full Name")
 
 class ProfileOut(ProfileBase):
     id: int
     user_id: int
+    name: Optional[str] = None
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

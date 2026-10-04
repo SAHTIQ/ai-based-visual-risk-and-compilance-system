@@ -3,15 +3,17 @@ import type { FormEvent } from 'react';
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const destination = (location.state as { from?: string } | null)?.from || '/dashboard';
@@ -30,6 +32,19 @@ export const Login: React.FC = () => {
 
     if (!result.success) {
       setError(result.message || 'Invalid email or password.');
+      return;
+    }
+    navigate(destination, { replace: true });
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setError('');
+    setIsGoogleSubmitting(true);
+    const result = await loginWithGoogle(credential);
+    setIsGoogleSubmitting(false);
+
+    if (!result.success) {
+      setError(result.message || 'Google sign-in failed.');
       return;
     }
     navigate(destination, { replace: true });
@@ -114,6 +129,24 @@ export const Login: React.FC = () => {
                 className="w-full py-2.5 rounded-button border border-border text-sm font-semibold text-text-primary hover:bg-background transition-colors">
                 Use demo account
               </button>
+
+              <div className="relative my-3 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative bg-surface px-3 text-[11px] font-medium uppercase tracking-wider text-text-secondary">
+                  Or continue with
+                </div>
+              </div>
+
+              <div className="flex justify-center w-full">
+                <GoogleAuthButton
+                  text="signin_with"
+                  disabled={isSubmitting || isGoogleSubmitting}
+                  onSuccess={handleGoogleSuccess}
+                  onError={(msg) => setError(msg)}
+                />
+              </div>
 
               <div className="text-center pt-2">
                 <span className="text-xs text-text-secondary">Don't have an account? </span>
