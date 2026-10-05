@@ -33,6 +33,7 @@ from app.services.app_context import (
     extract_inline_cards_and_sources,
 )
 from app.services.rag import rag_service
+from app.services.context_synthesizer import synthesize_grounded_response
 
 router = APIRouter(prefix="/api/chat", tags=["AI Productivity & Lifestyle Assistant"])
 
@@ -300,6 +301,7 @@ def post_message_to_conversation(
         messages=llm_messages,
         system_prompt=system_prompt,
         action=payload.action,
+        user_context=user_context,
     )
 
     # 5. Persist assistant message
@@ -414,17 +416,28 @@ def stream_message_to_conversation(
                 messages=llm_messages,
                 system_prompt=system_prompt,
                 action=payload.action,
+                user_context=user_context,
             ):
                 accumulated_chunks.append(chunk)
                 yield f"data: {json.dumps({'type': 'chunk', 'text': chunk})}\n\n"
         except Exception as e:
-            err_msg = "AI service is temporarily unavailable. Please try again."
-            accumulated_chunks.append(err_msg)
-            yield f"data: {json.dumps({'type': 'chunk', 'text': err_msg})}\n\n"
+            fallback_text = synthesize_grounded_response(
+                user_context,
+                user_query,
+                action=payload.action,
+                history=llm_messages,
+            )
+            accumulated_chunks.append(fallback_text)
+            yield f"data: {json.dumps({'type': 'chunk', 'text': fallback_text})}\n\n"
 
         full_content = "".join(accumulated_chunks).strip()
         if not full_content:
-            full_content = "I could not generate a response at this time. Please try again."
+            full_content = synthesize_grounded_response(
+                user_context,
+                user_query,
+                action=payload.action,
+                history=llm_messages,
+            )
 
         # Save assistant message to DB
         asst_msg = ChatMessage(

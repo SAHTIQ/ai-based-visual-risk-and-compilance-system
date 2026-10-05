@@ -177,7 +177,64 @@ class ChatAndLLMTests(unittest.TestCase):
         self.assertIn("warmly", prompt)
         self.assertNotIn("Short answer:", prompt)
 
+    def test_grounded_synthesis_and_resilient_failover(self):
+        """Verify the intelligent synthesis engine delivers accurate, grounded responses across all domains without error messages."""
+        from app.services.context_synthesizer import (
+            synthesize_grounded_response,
+            synthesize_grounded_stream,
+        )
+
+        sample_context = {
+            "user_profile": {"name": "Marcus Vance"},
+            "query_domains": ["productivity"],
+            "productivity_analytics": {
+                "productivity_score": 79,
+                "consistency_pct": "75.0%",
+                "total_focus_hours": 1043.7,
+                "peak_working_hours": "09:00 - 11:00",
+                "most_productive_day": "Thursday",
+                "recent_sessions": [{"activity": "Coding", "duration_min": 92}],
+            },
+            "future_simulation": {
+                "baseline": {
+                    "wellbeing_score": "73.9/100",
+                    "burnout_pct": "13.0%",
+                    "sleep_hrs_night": "7.5 hrs",
+                    "monthly_spending": "₹34,195",
+                },
+                "recommendation": "Maintain structured focus blocks while keeping a consistent sleep schedule.",
+            },
+        }
+
+        # 1. Productivity Summary
+        prod_resp = synthesize_grounded_response(sample_context, "Summarize my recent productivity and activity patterns.")
+        self.assertIn("Marcus", prod_resp)
+        self.assertIn("79/100", prod_resp)
+        self.assertIn("75.0%", prod_resp)
+        self.assertIn("09:00 - 11:00", prod_resp)
+        self.assertNotIn("temporarily unavailable", prod_resp)
+
+        # 2. Action Modifiers (bullets, shorter, simply)
+        bullets_resp = synthesize_grounded_response(sample_context, "Summarize my productivity", action="make_bullets")
+        self.assertIn("- ", bullets_resp)
+
+        short_resp = synthesize_grounded_response(sample_context, "Summarize my productivity", action="make_shorter")
+        self.assertTrue(len(short_resp) < 250)
+
+        # 3. Simulation Explanation
+        sim_resp = synthesize_grounded_response(sample_context, "Explain my latest simulation results")
+        self.assertIn("wellbeing", sim_resp.lower())
+        self.assertIn("burnout", sim_resp.lower())
+        self.assertNotIn("temporarily unavailable", sim_resp)
+
+        # 4. Stream Generator Output
+        stream_chunks = list(synthesize_grounded_stream(sample_context, "Summarize my recent productivity and activity patterns."))
+        self.assertTrue(len(stream_chunks) > 10)
+        reconstructed = "".join(stream_chunks)
+        self.assertEqual(reconstructed, prod_resp)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

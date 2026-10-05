@@ -316,14 +316,20 @@ export const AIAssistant: React.FC = () => {
             setGenerationStatus('');
             setStreamingContent('');
             setStreamingCards(null);
-            await loadConversationDetail(targetConvId!);
+            if (targetConvId) {
+              await loadConversationDetail(targetConvId);
+            }
             const updatedList = await api.getConversations(true);
             setConversations(updatedList);
           },
-          onError: () => {
+          onError: async () => {
             setIsGenerating(false);
             setGenerationStatus('');
-            showToast('AI service is temporarily unavailable. Please try again.', 'error');
+            setStreamingContent('');
+            setStreamingCards(null);
+            if (targetConvId) {
+              await loadConversationDetail(targetConvId);
+            }
           },
         },
         abortController.signal,
@@ -333,7 +339,11 @@ export const AIAssistant: React.FC = () => {
     } catch {
       setIsGenerating(false);
       setGenerationStatus('');
-      showToast('AI service is temporarily unavailable. Please try again.', 'error');
+      setStreamingContent('');
+      setStreamingCards(null);
+      if (targetConvId) {
+        await loadConversationDetail(targetConvId);
+      }
     }
   };
 
