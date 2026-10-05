@@ -74,26 +74,42 @@ def root_health_check():
         "docs": "/docs"
     }
 
+import logging
+logger = logging.getLogger("app.main")
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
     # Add columns introduced after the initial schema without destroying existing data.
     with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS category VARCHAR(100) NOT NULL DEFAULT 'Routine'"))
-        conn.execute(text("ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS frequency VARCHAR(100) NOT NULL DEFAULT 'Daily'"))
-        conn.execute(text("ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.execute(text("ALTER TABLE financial_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.execute(text("ALTER TABLE risk_detections ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.execute(text("ALTER TABLE work_sessions ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(50)"))
-        conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS location VARCHAR(255)"))
-        conn.execute(text("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS bio VARCHAR(2000)"))
-        conn.execute(text("ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS theme VARCHAR(20) NOT NULL DEFAULT 'system'"))
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user'"))
-        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_key VARCHAR(50)"))
-        conn.execute(text("ALTER TABLE users ALTER COLUMN user_key TYPE VARCHAR(50)"))
-        conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE"))
+        schema_updates = [
+            "ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS category VARCHAR(100) NOT NULL DEFAULT 'Routine'",
+            "ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS frequency VARCHAR(100) NOT NULL DEFAULT 'Daily'",
+            "ALTER TABLE habit_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE financial_records ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE risk_detections ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE work_sessions ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(50)",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS location VARCHAR(255)",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS bio VARCHAR(2000)",
+            "ALTER TABLE user_profiles ALTER COLUMN created_at SET DEFAULT NOW()",
+            "ALTER TABLE user_profiles ALTER COLUMN updated_at SET DEFAULT NOW()",
+            "ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS theme VARCHAR(20) NOT NULL DEFAULT 'system'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS user_key VARCHAR(50)",
+            "ALTER TABLE users ALTER COLUMN user_key TYPE VARCHAR(50)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) NOT NULL DEFAULT 'local'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(1024)",
+            "ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL",
+            "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE",
+        ]
+        for stmt in schema_updates:
+            try:
+                conn.execute(text(stmt))
+            except Exception as e:
+                logger.warning(f"Startup schema update note: {e}")
 
     # Auto-seed initial test user if database is completely empty
     db = SessionLocal()
